@@ -1,0 +1,1086 @@
+openapi: 3.0.3
+info:
+  title: Melos Market API
+  version: 0.1.0
+  description: API for connecting customers with trade workers and customer problem postings.
+servers:
+  - url: /api
+tags:
+  - name: Auth
+    description: Login, registration and current user endpoints.
+  - name: Admin
+    description: Internal moderation endpoints.
+  - name: Customers
+    description: Customer registration and profile endpoints.
+  - name: Workers
+    description: Worker registration and discovery endpoints.
+  - name: Problems
+    description: Customer problem posting and browsing endpoints.
+paths:
+  /admin/workers:
+    get:
+      tags:
+        - Admin
+      operationId: listAdminWorkers
+      summary: List all worker profiles for admin moderation
+      responses:
+        '200':
+          description: Worker profiles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Worker'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/workers/{workerId}:
+    patch:
+      tags:
+        - Admin
+      operationId: updateAdminWorkerBadges
+      summary: Set worker badges as admin
+      parameters:
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkerBadgesRequest'
+      responses:
+        '200':
+          description: Worker profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Admin
+      operationId: deleteAdminWorker
+      summary: Delete a worker profile as admin
+      parameters:
+        - $ref: '#/components/parameters/WorkerId'
+      responses:
+        '204':
+          description: Worker profile deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/problems:
+    get:
+      tags:
+        - Admin
+      operationId: listAdminProblems
+      summary: List all customer problems for admin moderation
+      responses:
+        '200':
+          description: Customer problems.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/problems/{problemId}:
+    delete:
+      tags:
+        - Admin
+      operationId: deleteAdminProblem
+      summary: Delete a customer problem as admin
+      parameters:
+        - $ref: '#/components/parameters/ProblemId'
+      responses:
+        '204':
+          description: Problem deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /auth/register/worker:
+    post:
+      tags:
+        - Auth
+      operationId: registerWorker
+      summary: Register a worker account and profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterWorkerRequest'
+      responses:
+        '201':
+          description: Worker account registered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /auth/register/customer:
+    post:
+      tags:
+        - Auth
+      operationId: registerCustomer
+      summary: Register a customer account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCustomerRequest'
+      responses:
+        '201':
+          description: Customer account registered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      operationId: login
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      operationId: getCurrentUser
+      summary: Get the currently logged in user
+      responses:
+        '200':
+          description: Current user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /customers:
+    post:
+      tags:
+        - Customers
+      operationId: createCustomer
+      summary: Register a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: Customer created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /customers/{customerId}:
+    get:
+      tags:
+        - Customers
+      operationId: getCustomer
+      summary: Get a customer by id
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+      responses:
+        '200':
+          description: Customer found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /workers:
+    get:
+      tags:
+        - Workers
+      operationId: searchWorkers
+      summary: Search workers
+      parameters:
+        - name: trade
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Trade'
+        - name: serviceArea
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 160
+      responses:
+        '200':
+          description: Workers matching the search criteria.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Worker'
+    post:
+      tags:
+        - Workers
+      operationId: createWorker
+      summary: Register a worker
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkerRequest'
+      responses:
+        '201':
+          description: Worker created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /workers/{workerId}:
+    get:
+      tags:
+        - Workers
+      operationId: getWorker
+      summary: Get a worker by id
+      parameters:
+        - $ref: '#/components/parameters/WorkerId'
+      responses:
+        '200':
+          description: Worker found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /workers/{workerId}/reviews:
+    post:
+      tags:
+        - Workers
+      operationId: createWorkerReview
+      summary: Leave or update a review for a worker as another logged-in worker
+      parameters:
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkerReviewRequest'
+      responses:
+        '201':
+          description: Worker review saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerReview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /workers/me:
+    get:
+      tags:
+        - Workers
+      operationId: getMyWorkerProfile
+      summary: Get the logged-in worker profile
+      responses:
+        '200':
+          description: Logged-in worker profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Workers
+      operationId: updateMyWorkerProfile
+      summary: Update the logged-in worker profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkerProfileRequest'
+      responses:
+        '200':
+          description: Worker profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /workers/me/references:
+    post:
+      tags:
+        - Workers
+      operationId: uploadMyWorkerReference
+      summary: Upload a reference image for the logged-in worker profile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                title:
+                  type: string
+                  maxLength: 180
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Reference image uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerReferenceImage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /workers/me/references/{referenceId}:
+    delete:
+      tags:
+        - Workers
+      operationId: deleteMyWorkerReference
+      summary: Delete a reference image from the logged-in worker profile
+      parameters:
+        - name: referenceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Reference image deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /problems:
+    get:
+      tags:
+        - Problems
+      operationId: searchProblems
+      summary: Search customer problems
+      parameters:
+        - name: trade
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Trade'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ProblemStatus'
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 180
+      responses:
+        '200':
+          description: Problems matching the search criteria.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Problem'
+    post:
+      tags:
+        - Problems
+      operationId: createProblem
+      summary: Create a customer problem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProblemRequest'
+      responses:
+        '201':
+          description: Problem created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /problems/me:
+    get:
+      tags:
+        - Problems
+      operationId: getMyProblems
+      summary: Get problems posted by the logged-in customer
+      responses:
+        '200':
+          description: Problems posted by the logged-in customer.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /problems/{problemId}:
+    get:
+      tags:
+        - Problems
+      operationId: getProblem
+      summary: Get a customer problem by id
+      parameters:
+        - $ref: '#/components/parameters/ProblemId'
+      responses:
+        '200':
+          description: Problem found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /problems/{problemId}/photos:
+    post:
+      tags:
+        - Problems
+      operationId: uploadProblemPhoto
+      summary: Upload a photo for a customer problem
+      parameters:
+        - $ref: '#/components/parameters/ProblemId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                title:
+                  type: string
+                  maxLength: 180
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Problem photo uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemImage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    CustomerId:
+      name: customerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    WorkerId:
+      name: workerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    ProblemId:
+      name: problemId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+  responses:
+    BadRequest:
+      description: The request is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication is required or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Trade:
+      type: string
+      description: Type of work a worker can perform or a customer problem needs.
+      enum:
+        - GENERAL_CONTRACTING
+        - MASON
+        - TILER
+        - PAINTER_DECORATOR_WALLPAPERER
+        - CARPENTER_ROOFER
+        - TINSMITH
+        - PLUMBING_GAS_HEATING
+        - AIR_CONDITIONING_INSTALLER
+        - WELDER
+        - EARTHWORKS
+        - BUILDING_DEMOLITION
+        - DRAIN_CLEANING
+        - GAS_APPLIANCE_REPAIR
+        - AIR_CONDITIONING_CLEANING
+        - CCTV_INSTALLER
+        - SHADING_TECHNOLOGY
+        - DANGEROUS_TREE_REMOVAL
+        - CAR_MECHANIC
+        - CAR_PAINTER
+        - AUTO_BODY_REPAIRER
+        - TIRE_REPAIR
+        - WINDSHIELD_REPAIR
+        - CAR_DETAILER
+        - CAR_TOWING
+        - MOVING
+        - FREIGHT_TRANSPORT
+    ProblemStatus:
+      type: string
+      enum:
+        - OPEN
+        - IN_PROGRESS
+        - CLOSED
+    UserRole:
+      type: string
+      enum:
+        - WORKER
+        - CUSTOMER
+        - ADMIN
+    CurrentUser:
+      type: object
+      required:
+        - id
+        - email
+        - role
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+        workerId:
+          type: integer
+          format: int64
+          nullable: true
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 200
+    RegisterCustomerRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 200
+    AuthResponse:
+      type: object
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/CurrentUser'
+        worker:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Worker'
+    Customer:
+      type: object
+      required:
+        - id
+        - fullName
+        - email
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        fullName:
+          type: string
+          example: Jane Customer
+        email:
+          type: string
+          format: email
+          example: jane@example.com
+        phone:
+          type: string
+          nullable: true
+          example: '+47 400 00 000'
+        createdAt:
+          type: string
+          format: date-time
+    CreateCustomerRequest:
+      type: object
+      required:
+        - fullName
+        - email
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 160
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+    Worker:
+      type: object
+      required:
+        - id
+        - businessName
+        - contactName
+        - email
+        - trade
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        businessName:
+          type: string
+          example: Fast Pipe Repairs
+        contactName:
+          type: string
+          example: Alex Worker
+        email:
+          type: string
+          format: email
+          example: alex@example.com
+        phone:
+          type: string
+          nullable: true
+          example: '+47 411 11 111'
+        verified:
+          type: boolean
+          example: false
+        topWorker:
+          type: boolean
+          example: false
+        manyReferences:
+          type: boolean
+          example: false
+        hundredJobs:
+          type: boolean
+          example: false
+        fastResponder:
+          type: boolean
+          example: false
+        availabilityStatus:
+          $ref: '#/components/schemas/WorkerAvailabilityStatus'
+        urgentWork:
+          type: boolean
+          example: false
+        trialStartedAt:
+          type: string
+          format: date-time
+        trialEndsAt:
+          type: string
+          format: date-time
+        accessStatus:
+          $ref: '#/components/schemas/WorkerAccessStatus'
+        trialDaysRemaining:
+          type: integer
+          minimum: 0
+          example: 24
+        trade:
+          $ref: '#/components/schemas/Trade'
+        serviceArea:
+          type: string
+          nullable: true
+          example: Oslo
+        description:
+          type: string
+          nullable: true
+          example: Emergency plumbing and bathroom renovations.
+        referenceImages:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkerReferenceImage'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkerReview'
+        createdAt:
+          type: string
+          format: date-time
+    CreateWorkerRequest:
+      type: object
+      required:
+        - businessName
+        - contactName
+        - email
+        - trade
+      properties:
+        businessName:
+          type: string
+          minLength: 2
+          maxLength: 180
+        contactName:
+          type: string
+          minLength: 2
+          maxLength: 160
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        trade:
+          $ref: '#/components/schemas/Trade'
+        serviceArea:
+          type: string
+          maxLength: 160
+          nullable: true
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+    RegisterWorkerRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateWorkerRequest'
+        - type: object
+          required:
+            - password
+          properties:
+            password:
+              type: string
+              minLength: 8
+              maxLength: 200
+    UpdateWorkerProfileRequest:
+      type: object
+      required:
+        - businessName
+        - contactName
+        - trade
+      properties:
+        businessName:
+          type: string
+          minLength: 2
+          maxLength: 180
+        contactName:
+          type: string
+          minLength: 2
+          maxLength: 160
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        trade:
+          $ref: '#/components/schemas/Trade'
+        serviceArea:
+          type: string
+          maxLength: 160
+          nullable: true
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+        availabilityStatus:
+          $ref: '#/components/schemas/WorkerAvailabilityStatus'
+        urgentWork:
+          type: boolean
+    UpdateWorkerBadgesRequest:
+      type: object
+      required:
+        - verified
+        - topWorker
+        - manyReferences
+        - hundredJobs
+        - fastResponder
+      properties:
+        verified:
+          type: boolean
+        topWorker:
+          type: boolean
+        manyReferences:
+          type: boolean
+        hundredJobs:
+          type: boolean
+        fastResponder:
+          type: boolean
+    WorkerAvailabilityStatus:
+      type: string
+      enum:
+        - AVAILABLE
+        - LIMITED
+        - UNAVAILABLE_THIS_MONTH
+    WorkerAccessStatus:
+      type: string
+      enum:
+        - TRIALING
+        - TRIAL_EXPIRED
+        - ACTIVE
+        - PAST_DUE
+        - CANCELED
+    WorkerReferenceImage:
+      type: object
+      required:
+        - id
+        - title
+        - imageUrl
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        imageUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    CreateWorkerReviewRequest:
+      type: object
+      required:
+        - rating
+        - text
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        text:
+          type: string
+          minLength: 5
+          maxLength: 1000
+    WorkerReview:
+      type: object
+      required:
+        - id
+        - reviewerWorkerId
+        - reviewerName
+        - rating
+        - text
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        reviewerWorkerId:
+          type: integer
+          format: int64
+        reviewerName:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - status
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 100
+        customerId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1
+        phone:
+          type: string
+          nullable: true
+          example: '+36 30 123 4567'
+        title:
+          type: string
+          example: Leaking kitchen sink
+        description:
+          type: string
+          example: Water is leaking from the pipe under the sink.
+        trade:
+          allOf:
+            - $ref: '#/components/schemas/Trade'
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          example: Oslo
+        status:
+          $ref: '#/components/schemas/ProblemStatus'
+        problemImages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProblemImage'
+        createdAt:
+          type: string
+          format: date-time
+    CreateProblemRequest:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        title:
+          type: string
+          minLength: 3
+          maxLength: 180
+        description:
+          type: string
+          minLength: 10
+          maxLength: 4000
+        trade:
+          allOf:
+            - $ref: '#/components/schemas/Trade'
+          nullable: true
+        location:
+          type: string
+          maxLength: 180
+          nullable: true
+    ProblemImage:
+      type: object
+      required:
+        - id
+        - title
+        - imageUrl
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        imageUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Resource not found.
+        details:
+          type: array
+          items:
+            type: string
