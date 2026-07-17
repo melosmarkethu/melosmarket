@@ -238,6 +238,14 @@ const workerProfileSlug = (worker: WorkerCard) => {
 
 const workerProfilePath = (worker: WorkerCard) => `/${workerProfileSlug(worker)}`
 
+const problemProfileSlug = (problem: ProblemPost) => {
+  const titleSlug = slugify(problem.title) || 'problema'
+  const citySlug = problem.location === 'Nincs megadva' ? '' : slugify(problem.location)
+  return citySlug ? `${titleSlug}-${citySlug}` : titleSlug
+}
+
+const problemProfilePath = (problem: ProblemPost) => `/${problemProfileSlug(problem)}`
+
 const trades = [
   'Generálkivitelezés',
   'Kőműves',
@@ -702,10 +710,12 @@ function App() {
     window.history.pushState(null, '', '/')
   }
 
-  const openProblemProfile = async (problem: ProblemPost) => {
+  const openProblemProfile = async (problem: ProblemPost, updatePath = true) => {
     if (!problem.id) {
       setSelectedProblem(problem)
-      window.location.hash = `problem-${problem.title.toLowerCase().replaceAll(' ', '-')}`
+      if (updatePath) {
+        window.history.pushState(null, '', problemProfilePath(problem))
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -720,13 +730,15 @@ function App() {
       setSelectedProblem(problem)
     }
 
-    window.location.hash = `problem-${problem.id}`
+    if (updatePath) {
+      window.history.pushState(null, '', problemProfilePath(problem))
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const closeProblemProfile = () => {
     setSelectedProblem(null)
-    window.location.hash = 'jobs'
+    window.history.pushState(null, '', '/')
   }
 
   const uploadReferenceWorks = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -884,23 +896,32 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const openWorkerFromPath = () => {
+    const openProfileFromPath = () => {
       const pathSlug = window.location.pathname.replace(/^\/+|\/+$/g, '')
       if (!pathSlug) {
         setSelectedWorker(null)
+        setSelectedProblem(null)
         return
       }
 
       const worker = workerCards.find((item) => workerProfileSlug(item) === pathSlug)
       if (worker) {
         openWorkerProfile(worker, false)
+        setSelectedProblem(null)
+        return
+      }
+
+      const problem = problemPosts.find((item) => problemProfileSlug(item) === pathSlug)
+      if (problem) {
+        setSelectedWorker(null)
+        openProblemProfile(problem, false).catch(() => undefined)
       }
     }
 
-    openWorkerFromPath()
-    window.addEventListener('popstate', openWorkerFromPath)
-    return () => window.removeEventListener('popstate', openWorkerFromPath)
-  }, [workerCards])
+    openProfileFromPath()
+    window.addEventListener('popstate', openProfileFromPath)
+    return () => window.removeEventListener('popstate', openProfileFromPath)
+  }, [workerCards, problemPosts])
 
   useEffect(() => {
     if (!authToken) {
