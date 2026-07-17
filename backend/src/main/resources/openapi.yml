@@ -499,6 +499,34 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '404':
           $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Problems
+      operationId: updateMyProblem
+      summary: Update a problem posted by the logged-in customer
+      parameters:
+        - $ref: '#/components/parameters/ProblemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProblemRequest'
+      responses:
+        '200':
+          description: Problem updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /problems/{problemId}/photos:
     post:
       tags:
@@ -533,6 +561,30 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /problems/{problemId}/photos/{imageId}:
+    delete:
+      tags:
+        - Problems
+      operationId: deleteProblemPhoto
+      summary: Delete a photo from a problem posted by the logged-in customer
+      parameters:
+        - $ref: '#/components/parameters/ProblemId'
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '204':
+          description: Problem photo deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 components:
@@ -576,6 +628,12 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: Authentication is required or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: The authenticated user is not allowed to perform this action.
       content:
         application/json:
           schema:
@@ -1041,6 +1099,32 @@ components:
           type: string
           format: date-time
     CreateProblemRequest:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        title:
+          type: string
+          minLength: 3
+          maxLength: 180
+        description:
+          type: string
+          minLength: 10
+          maxLength: 4000
+        trade:
+          allOf:
+            - $ref: '#/components/schemas/Trade'
+          nullable: true
+        location:
+          type: string
+          maxLength: 180
+          nullable: true
+    UpdateProblemRequest:
       type: object
       required:
         - title

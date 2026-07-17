@@ -12,6 +12,7 @@ type ProblemFormState = {
 
 type ProblemPost = {
   id?: number
+  customerId?: number
   title: string
   description: string
   trade: string
@@ -29,6 +30,7 @@ type ProblemImage = {
 
 type ProblemApiResponse = {
   id: number
+  customerId?: number
   title: string
   description: string
   status?: string
@@ -478,7 +480,17 @@ function App() {
     location: '',
     phone: '',
   })
+  const [problemEditForm, setProblemEditForm] = useState<ProblemFormState>({
+    title: '',
+    description: '',
+    trade: '',
+    location: '',
+    phone: '',
+  })
   const [problemPhotoFiles, setProblemPhotoFiles] = useState<File[]>([])
+  const [problemEditPhotoFiles, setProblemEditPhotoFiles] = useState<File[]>([])
+  const [problemEditState, setProblemEditState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [problemEditMessage, setProblemEditMessage] = useState('')
   const [problemPosts, setProblemPosts] = useState<ProblemPost[]>(initialProblems)
   const [customerProblems, setCustomerProblems] = useState<ProblemPost[]>([])
   const [customerProblemsState, setCustomerProblemsState] = useState<'idle' | 'loading' | 'error'>('idle')
@@ -534,6 +546,7 @@ function App() {
 
   const problemFromApi = (problem: ProblemApiResponse): ProblemPost => ({
     id: problem.id,
+    customerId: problem.customerId,
     title: problem.title,
     description: problem.description,
     trade: problem.trade ? tradeLabelsByApiValue[problem.trade] ?? problem.trade : 'Nincs megadva',
@@ -542,6 +555,16 @@ function App() {
     posted: problem.createdAt ? new Date(problem.createdAt).toLocaleDateString('hu-HU') : 'adatbázisból',
     images: (problem.problemImages ?? []).map(problemImageFromApi),
   })
+
+  const updateProblemEverywhere = (updatedProblem: ProblemPost) => {
+    setSelectedProblem(updatedProblem)
+    setProblemPosts((current) =>
+      current.map((problem) => (problem.id === updatedProblem.id ? updatedProblem : problem)),
+    )
+    setCustomerProblems((current) =>
+      current.map((problem) => (problem.id === updatedProblem.id ? updatedProblem : problem)),
+    )
+  }
 
   const formatHungarianDate = (dateValue?: string) =>
     dateValue
@@ -710,9 +733,23 @@ function App() {
     window.history.pushState(null, '', '/')
   }
 
+  const showProblemProfile = (problem: ProblemPost) => {
+    setSelectedProblem(problem)
+    setProblemEditForm({
+      title: problem.title,
+      description: problem.description,
+      trade: problem.trade === 'Nincs megadva' ? '' : problem.trade,
+      location: problem.location === 'Nincs megadva' ? '' : problem.location,
+      phone: problem.phone ?? '',
+    })
+    setProblemEditPhotoFiles([])
+    setProblemEditMessage('')
+    setProblemEditState('idle')
+  }
+
   const openProblemProfile = async (problem: ProblemPost, updatePath = true) => {
     if (!problem.id) {
-      setSelectedProblem(problem)
+      showProblemProfile(problem)
       if (updatePath) {
         window.history.pushState(null, '', problemProfilePath(problem))
       }
@@ -725,9 +762,9 @@ function App() {
       if (!response.ok) {
         throw new Error(`Problem load failed with status ${response.status}`)
       }
-      setSelectedProblem(problemFromApi(await response.json()))
+      showProblemProfile(problemFromApi(await response.json()))
     } catch {
-      setSelectedProblem(problem)
+      showProblemProfile(problem)
     }
 
     if (updatePath) {
@@ -1002,6 +1039,17 @@ function App() {
 
   const updateProblemPhotos = (event: ChangeEvent<HTMLInputElement>) => {
     setProblemPhotoFiles(Array.from(event.target.files ?? []))
+  }
+
+  const updateProblemEditForm = (field: keyof ProblemFormState, value: string) => {
+    setProblemEditForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  const updateProblemEditPhotos = (event: ChangeEvent<HTMLInputElement>) => {
+    setProblemEditPhotoFiles(Array.from(event.target.files ?? []))
   }
 
   const submitWorkerSearch = async (event: FormEvent<HTMLFormElement>) => {
@@ -1367,7 +1415,129 @@ function App() {
     }
   }
 
+  const submitProblemEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedProblem?.id) {
+      return
+    }
+
+    setProblemEditState('submitting')
+    setProblemEditMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/problems/${selectedProblem.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders(),
+        },
+        body: JSON.stringify({
+          title: problemEditForm.title,
+          description: problemEditForm.description,
+          trade: problemEditForm.trade ? tradeApiValues[problemEditForm.trade] : undefined,
+          location: problemEditForm.location || undefined,
+          phone: problemEditForm.phone || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Problem update failed with status ${response.status}`)
+      }
+
+      const updatedProblem = problemFromApi(await response.json())
+      updateProblemEverywhere(updatedProblem)
+      window.history.replaceState(null, '', problemProfilePath(updatedProblem))
+      setProblemEditState('success')
+      setProblemEditMessage('A probléma frissítve.')
+    } catch {
+      setProblemEditState('error')
+      setProblemEditMessage('Nem sikerült frissíteni a problémát.')
+    }
+  }
+
+  const uploadProblemEditPhotos = async () => {
+    if (!selectedProblem?.id || problemEditPhotoFiles.length === 0) {
+      return
+    }
+
+    setProblemEditState('submitting')
+    setProblemEditMessage('')
+
+    try {
+      const uploadedImages = await Promise.all(
+        problemEditPhotoFiles.map(async (file) => {
+          const formData = new FormData()
+          formData.append('image', file)
+          formData.append('title', file.name.replace(/\.[^.]+$/, ''))
+
+          const response = await fetch(`${apiBaseUrl}/problems/${selectedProblem.id}/photos`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: formData,
+          })
+
+          if (!response.ok) {
+            throw new Error(`Problem photo upload failed with status ${response.status}`)
+          }
+
+          return problemImageFromApi(await response.json())
+        }),
+      )
+
+      const updatedProblem = {
+        ...selectedProblem,
+        images: [...uploadedImages, ...selectedProblem.images],
+      }
+      updateProblemEverywhere(updatedProblem)
+      setProblemEditPhotoFiles([])
+      setProblemEditState('success')
+      setProblemEditMessage('A képek feltöltve.')
+    } catch {
+      setProblemEditState('error')
+      setProblemEditMessage('Nem sikerült feltölteni a képeket.')
+    }
+  }
+
+  const deleteProblemPhoto = async (image: ProblemImage) => {
+    if (!selectedProblem?.id) {
+      return
+    }
+    const confirmed = window.confirm(`Biztosan törlöd ezt a képet: ${image.title}?`)
+    if (!confirmed) {
+      return
+    }
+
+    setProblemEditState('submitting')
+    setProblemEditMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/problems/${selectedProblem.id}/photos/${image.id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Problem photo delete failed with status ${response.status}`)
+      }
+
+      const updatedProblem = {
+        ...selectedProblem,
+        images: selectedProblem.images.filter((item) => item.id !== image.id),
+      }
+      updateProblemEverywhere(updatedProblem)
+      setProblemEditState('success')
+      setProblemEditMessage('A kép törölve.')
+    } catch {
+      setProblemEditState('error')
+      setProblemEditMessage('Nem sikerült törölni a képet.')
+    }
+  }
+
   if (selectedProblem) {
+    const isOwnProblem = Boolean(
+      isCustomer && selectedProblem.id && customerProblems.some((problem) => problem.id === selectedProblem.id),
+    )
+
     return (
       <main className="page-shell">
         <header className="site-header">
@@ -1429,6 +1599,100 @@ function App() {
               Ha a munka illik hozzád, a megadott telefonszámon tudsz egyeztetni az ügyféllel.
             </p>
           </div>
+
+          {isOwnProblem && (
+            <div className="profile-panel">
+              <p className="section-kicker">Saját probléma</p>
+              <h2>Probléma szerkesztése</h2>
+              <form className="profile-edit-form" onSubmit={submitProblemEdit}>
+                <div className="field">
+                  <label htmlFor="problem-edit-title">Probléma címe</label>
+                  <input
+                    id="problem-edit-title"
+                    minLength={3}
+                    maxLength={180}
+                    required
+                    value={problemEditForm.title}
+                    onChange={(event) => updateProblemEditForm('title', event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="problem-edit-description">Leírás</label>
+                  <textarea
+                    id="problem-edit-description"
+                    minLength={10}
+                    maxLength={4000}
+                    rows={4}
+                    required
+                    value={problemEditForm.description}
+                    onChange={(event) => updateProblemEditForm('description', event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="problem-edit-trade">Szakma</label>
+                  <select
+                    id="problem-edit-trade"
+                    value={problemEditForm.trade}
+                    onChange={(event) => updateProblemEditForm('trade', event.target.value)}
+                  >
+                    <option value="">Nincs megadva</option>
+                    {trades.map((trade) => (
+                      <option key={trade}>{trade}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="problem-edit-location">Helyszín</label>
+                  <input
+                    id="problem-edit-location"
+                    maxLength={180}
+                    value={problemEditForm.location}
+                    onChange={(event) => updateProblemEditForm('location', event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="problem-edit-phone">Telefonszám</label>
+                  <input
+                    id="problem-edit-phone"
+                    maxLength={50}
+                    value={problemEditForm.phone}
+                    onChange={(event) => updateProblemEditForm('phone', event.target.value)}
+                  />
+                </div>
+                <button type="submit" className="button primary" disabled={problemEditState === 'submitting'}>
+                  {problemEditState === 'submitting' ? 'Mentés...' : 'Probléma mentése'}
+                </button>
+              </form>
+
+              <h2>Képek kezelése</h2>
+              <label className="upload-box" htmlFor="problem-edit-photos">
+                <span>Új képek feltöltése</span>
+                <small>JPG vagy PNG képeket adhatsz hozzá ehhez a problémához</small>
+                <input
+                  id="problem-edit-photos"
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  multiple
+                  onChange={updateProblemEditPhotos}
+                />
+              </label>
+              <button
+                type="button"
+                className="button secondary"
+                disabled={problemEditState === 'submitting' || problemEditPhotoFiles.length === 0}
+                onClick={uploadProblemEditPhotos}
+              >
+                {problemEditPhotoFiles.length > 0
+                  ? `${problemEditPhotoFiles.length} kép feltöltése`
+                  : 'Válassz képeket'}
+              </button>
+              {problemEditMessage && (
+                <p className={`form-message ${problemEditState === 'success' ? 'success' : 'error'}`} role="status">
+                  {problemEditMessage}
+                </p>
+              )}
+            </div>
+          )}
         </section>
 
         {selectedProblem.images.length > 0 && (
@@ -1443,6 +1707,16 @@ function App() {
             <div className="reference-grid">
               {selectedProblem.images.map((image) => (
                 <article className="reference-card" key={image.id}>
+                  {isOwnProblem && (
+                    <button
+                      className="reference-delete-button"
+                      type="button"
+                      aria-label={`${image.title} törlése`}
+                      onClick={() => deleteProblemPhoto(image)}
+                    >
+                      ×
+                    </button>
+                  )}
                   <img src={image.imageUrl} alt={image.title} />
                   <h3>{image.title}</h3>
                 </article>

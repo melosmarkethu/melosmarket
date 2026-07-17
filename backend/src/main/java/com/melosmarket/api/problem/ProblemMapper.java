@@ -5,6 +5,7 @@ import com.melosmarket.api.generated.model.Problem;
 import com.melosmarket.api.generated.model.ProblemImage;
 import com.melosmarket.api.generated.model.ProblemStatus;
 import com.melosmarket.api.generated.model.Trade;
+import com.melosmarket.api.generated.model.UpdateProblemRequest;
 import com.melosmarket.api.problem.domain.ProblemStatusEntity;
 import com.melosmarket.api.problem.domain.TradeType;
 import com.melosmarket.api.problem.persistence.ProblemEntity;
@@ -24,6 +25,14 @@ class ProblemMapper {
         entity.setLocation(blankToNull(request.getLocation()));
         entity.setStatus(ProblemStatusEntity.OPEN);
         return entity;
+    }
+
+    void updateEntity(ProblemEntity entity, UpdateProblemRequest request) {
+        entity.setTitle(request.getTitle());
+        entity.setDescription(request.getDescription());
+        entity.setPhone(blankToNull(request.getPhone()));
+        entity.setTrade(toEntityTrade(request.getTrade()));
+        entity.setLocation(blankToNull(request.getLocation()));
     }
 
     Problem toApi(ProblemEntity entity) {

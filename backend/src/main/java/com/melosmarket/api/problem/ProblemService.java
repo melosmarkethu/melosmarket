@@ -18,6 +18,7 @@ import com.melosmarket.api.generated.model.Problem;
 import com.melosmarket.api.generated.model.ProblemImage;
 import com.melosmarket.api.generated.model.ProblemStatus;
 import com.melosmarket.api.generated.model.Trade;
+import com.melosmarket.api.generated.model.UpdateProblemRequest;
 import com.melosmarket.api.problem.domain.ProblemStatusEntity;
 import com.melosmarket.api.problem.domain.TradeType;
 import com.melosmarket.api.problem.persistence.ProblemEntity;
@@ -75,6 +76,14 @@ public class ProblemService {
     }
 
     @Transactional
+    public Problem updateMyProblem(long problemId, UpdateProblemRequest request) {
+        CustomerEntity customer = requireCustomerProfile();
+        ProblemEntity problem = getOwnedProblem(problemId, customer);
+        problemMapper.updateEntity(problem, request);
+        return problemMapper.toApi(problem);
+    }
+
+    @Transactional
     public ProblemImage uploadProblemPhoto(long problemId, String title, MultipartFile image) {
         CustomerEntity customer = requireCustomerProfile();
         if (image == null || image.isEmpty()) {
@@ -109,6 +118,26 @@ public class ProblemService {
         problemImage.setImageUrl("/api/uploads/problem-images/" + filename);
 
         return problemMapper.toApiProblemImage(problemImageRepository.save(problemImage));
+    }
+
+    @Transactional
+    public void deleteProblemPhoto(long problemId, long imageId) {
+        CustomerEntity customer = requireCustomerProfile();
+        getOwnedProblem(problemId, customer);
+
+        ProblemImageEntity image = problemImageRepository.findById(imageId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem image not found"));
+        if (!problemImageRepository.existsByProblemIdAndId(problemId, imageId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem image not found");
+        }
+
+        Path storagePath = Path.of(image.getStoragePath()).normalize();
+        problemImageRepository.delete(image);
+        try {
+            Files.deleteIfExists(storagePath);
+        } catch (IOException exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not delete problem image file");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -163,6 +192,15 @@ public class ProblemService {
                     customer.setFullName(defaultCustomerName(user.email()));
                     return customerRepository.save(customer);
                 });
+    }
+
+    private ProblemEntity getOwnedProblem(long problemId, CustomerEntity customer) {
+        ProblemEntity problem = problemRepository.findById(problemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem not found"));
+        if (!customer.getId().equals(problem.getCustomerId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the owner can edit this problem");
+        }
+        return problem;
     }
 
     private void requireAdmin() {

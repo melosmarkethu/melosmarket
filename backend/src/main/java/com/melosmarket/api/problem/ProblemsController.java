@@ -8,6 +8,7 @@ import com.melosmarket.api.generated.model.Problem;
 import com.melosmarket.api.generated.model.ProblemImage;
 import com.melosmarket.api.generated.model.ProblemStatus;
 import com.melosmarket.api.generated.model.Trade;
+import com.melosmarket.api.generated.model.UpdateProblemRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,11 @@ public class ProblemsController implements ProblemsApi {
     }
 
     @Override
+    public ResponseEntity<Problem> updateMyProblem(Long problemId, UpdateProblemRequest updateProblemRequest) {
+        return ResponseEntity.ok(problemService.updateMyProblem(problemId, updateProblemRequest));
+    }
+
+    @Override
     public ResponseEntity<List<Problem>> getMyProblems() {
         return ResponseEntity.ok(problemService.getMyProblems());
     }
@@ -48,5 +54,11 @@ public class ProblemsController implements ProblemsApi {
     public ResponseEntity<ProblemImage> uploadProblemPhoto(Long problemId, MultipartFile image, String title) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(problemService.uploadProblemPhoto(problemId, title, image));
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteProblemPhoto(Long problemId, Long imageId) {
+        problemService.deleteProblemPhoto(problemId, imageId);
+        return ResponseEntity.noContent().build();
     }
 }
