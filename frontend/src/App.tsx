@@ -248,6 +248,16 @@ const problemProfileSlug = (problem: ProblemPost) => {
 
 const problemProfilePath = (problem: ProblemPost) => `/${problemProfileSlug(problem)}`
 
+const ignoredRouteSlugs = new Set([
+  'adatkezeles.html',
+  'aszf.html',
+  'ertekelesi-szabalyzat.html',
+  'felhasznaloi-hozzajarulas.html',
+  'hirdetesi-szabalyzat.html',
+  'moderacios-szabalyzat.html',
+  'panaszkezelesi-szabalyzat.html',
+])
+
 const trades = [
   'Generálkivitelezés',
   'Kőműves',
@@ -748,12 +758,13 @@ function App() {
   }
 
   const openProblemProfile = async (problem: ProblemPost, updatePath = true) => {
+    showProblemProfile(problem)
+    if (updatePath) {
+      window.history.pushState(null, '', problemProfilePath(problem))
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
     if (!problem.id) {
-      showProblemProfile(problem)
-      if (updatePath) {
-        window.history.pushState(null, '', problemProfilePath(problem))
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
@@ -766,11 +777,6 @@ function App() {
     } catch {
       showProblemProfile(problem)
     }
-
-    if (updatePath) {
-      window.history.pushState(null, '', problemProfilePath(problem))
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const closeProblemProfile = () => {
@@ -938,6 +944,9 @@ function App() {
       if (!pathSlug) {
         setSelectedWorker(null)
         setSelectedProblem(null)
+        return
+      }
+      if (ignoredRouteSlugs.has(pathSlug)) {
         return
       }
 
