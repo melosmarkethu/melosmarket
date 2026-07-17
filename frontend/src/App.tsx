@@ -222,6 +222,19 @@ const accessStatusLabels: Record<WorkerAccessStatus, string> = {
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
 const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '')
 
+const slugify = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+const workerProfileHash = (worker: WorkerCard) => {
+  const nameSlug = slugify(worker.name) || 'szakember'
+  return worker.id ? `worker-${nameSlug}-${worker.id}` : `worker-${nameSlug}`
+}
+
 const trades = [
   'Generálkivitelezés',
   'Kőműves',
@@ -675,7 +688,7 @@ function App() {
     setReviewForm({ rating: '5', text: '' })
     setReviewSubmitMessage('')
     setReviewSubmitState('idle')
-    window.location.hash = `worker-${worker.id ?? worker.name.toLowerCase().replaceAll(' ', '-')}`
+    window.location.hash = workerProfileHash(worker)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
