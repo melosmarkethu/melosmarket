@@ -2204,8 +2204,10 @@ function App() {
           <p className="eyebrow">Helyi szakemberek, felesleges találgatás nélkül</p>
           <h1>Találj megbízható szakembert javításhoz, felújításhoz és sürgős munkákhoz.</h1>
           <p className="hero-text">
-            Az ügyfelek kereshetnek szakembereket vagy feltölthetik a problémájukat.
-            A szakemberek pedig megtalálhatják a közelben lévő, hozzájuk illő munkákat.
+            <strong>
+              Az ügyfelek kereshetnek szakembereket vagy feltölthetik a problémájukat.
+              A szakemberek pedig megtalálhatják a közelben lévő, hozzájuk illő munkákat.
+            </strong>
           </p>
 
           <div className="hero-actions" aria-label="Elsődleges műveletek">
