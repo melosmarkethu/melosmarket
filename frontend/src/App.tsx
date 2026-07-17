@@ -230,10 +230,7 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-const workerProfileHash = (worker: WorkerCard) => {
-  const nameSlug = slugify(worker.name) || 'szakember'
-  return worker.id ? `worker-${nameSlug}-${worker.id}` : `worker-${nameSlug}`
-}
+const workerProfilePath = (worker: WorkerCard) => `/${slugify(worker.name) || 'szakember'}`
 
 const trades = [
   'Generálkivitelezés',
@@ -670,7 +667,7 @@ function App() {
     return mappedProblems
   }
 
-  const openWorkerProfile = (worker: WorkerCard) => {
+  const openWorkerProfile = (worker: WorkerCard, updatePath = true) => {
     setSelectedWorker(worker)
     setProfileEditForm({
       businessName: worker.name,
@@ -688,13 +685,15 @@ function App() {
     setReviewForm({ rating: '5', text: '' })
     setReviewSubmitMessage('')
     setReviewSubmitState('idle')
-    window.location.hash = workerProfileHash(worker)
+    if (updatePath) {
+      window.history.pushState(null, '', workerProfilePath(worker))
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const closeWorkerProfile = () => {
     setSelectedWorker(null)
-    window.location.hash = 'workers'
+    window.history.pushState(null, '', '/')
   }
 
   const openProblemProfile = async (problem: ProblemPost) => {
@@ -877,6 +876,25 @@ function App() {
       setProblemPosts(initialProblems)
     })
   }, [])
+
+  useEffect(() => {
+    const openWorkerFromPath = () => {
+      const pathSlug = window.location.pathname.replace(/^\/+|\/+$/g, '')
+      if (!pathSlug) {
+        setSelectedWorker(null)
+        return
+      }
+
+      const worker = workerCards.find((item) => slugify(item.name) === pathSlug)
+      if (worker) {
+        openWorkerProfile(worker, false)
+      }
+    }
+
+    openWorkerFromPath()
+    window.addEventListener('popstate', openWorkerFromPath)
+    return () => window.removeEventListener('popstate', openWorkerFromPath)
+  }, [workerCards])
 
   useEffect(() => {
     if (!authToken) {
