@@ -230,7 +230,13 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-const workerProfilePath = (worker: WorkerCard) => `/${slugify(worker.name) || 'szakember'}`
+const workerProfileSlug = (worker: WorkerCard) => {
+  const nameSlug = slugify(worker.name) || 'szakember'
+  const citySlug = worker.area === 'Nincs megadva' ? '' : slugify(worker.area)
+  return citySlug ? `${nameSlug}-${citySlug}` : nameSlug
+}
+
+const workerProfilePath = (worker: WorkerCard) => `/${workerProfileSlug(worker)}`
 
 const trades = [
   'Generálkivitelezés',
@@ -885,7 +891,7 @@ function App() {
         return
       }
 
-      const worker = workerCards.find((item) => slugify(item.name) === pathSlug)
+      const worker = workerCards.find((item) => workerProfileSlug(item) === pathSlug)
       if (worker) {
         openWorkerProfile(worker, false)
       }
