@@ -756,6 +756,10 @@ components:
           type: string
           nullable: true
           example: '+47 411 11 111'
+        taxNumber:
+          type: string
+          nullable: true
+          example: '12345678-1-42'
         verified:
           type: boolean
           example: false
@@ -833,6 +837,10 @@ components:
           type: string
           maxLength: 50
           nullable: true
+        taxNumber:
+          type: string
+          maxLength: 50
+          nullable: true
         trade:
           $ref: '#/components/schemas/Trade'
         serviceArea:
@@ -870,6 +878,10 @@ components:
           minLength: 2
           maxLength: 160
         phone:
+          type: string
+          maxLength: 50
+          nullable: true
+        taxNumber:
           type: string
           maxLength: 50
           nullable: true

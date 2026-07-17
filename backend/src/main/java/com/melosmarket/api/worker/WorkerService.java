@@ -158,6 +158,7 @@ public class WorkerService {
         entity.setBusinessName(request.getBusinessName());
         entity.setContactName(request.getContactName());
         entity.setPhone(blankToNull(request.getPhone()));
+        entity.setTaxNumber(blankToNull(request.getTaxNumber()));
         entity.setTrade(workerMapper.toEntityTrade(request.getTrade()));
         entity.setServiceArea(blankToNull(request.getServiceArea()));
         entity.setDescription(blankToNull(request.getDescription()));

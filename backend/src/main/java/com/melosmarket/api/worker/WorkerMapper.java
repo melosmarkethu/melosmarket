@@ -29,6 +29,7 @@ class WorkerMapper {
         entity.setContactName(request.getContactName());
         entity.setEmail(request.getEmail());
         entity.setPhone(blankToNull(request.getPhone()));
+        entity.setTaxNumber(blankToNull(request.getTaxNumber()));
         entity.setTrade(toEntityTrade(request.getTrade()));
         entity.setServiceArea(blankToNull(request.getServiceArea()));
         entity.setDescription(blankToNull(request.getDescription()));
@@ -41,6 +42,7 @@ class WorkerMapper {
         entity.setContactName(request.getContactName());
         entity.setEmail(request.getEmail());
         entity.setPhone(blankToNull(request.getPhone()));
+        entity.setTaxNumber(blankToNull(request.getTaxNumber()));
         entity.setTrade(toEntityTrade(request.getTrade()));
         entity.setServiceArea(blankToNull(request.getServiceArea()));
         entity.setDescription(blankToNull(request.getDescription()));
@@ -56,6 +58,7 @@ class WorkerMapper {
                 toApiTrade(entity.getTrade()),
                 entity.getCreatedAt())
                 .phone(entity.getPhone())
+                .taxNumber(entity.getTaxNumber())
                 .verified(entity.isVerified())
                 .topWorker(entity.isTopWorker())
                 .manyReferences(entity.isManyReferences())

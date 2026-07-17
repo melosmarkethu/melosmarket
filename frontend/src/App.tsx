@@ -51,6 +51,7 @@ type WorkerCard = {
   contactName?: string
   email?: string
   phone?: string
+  taxNumber?: string
   trade: string
   area: string
   rating: string
@@ -101,6 +102,7 @@ type WorkerFormState = {
   email: string
   password: string
   phone: string
+  taxNumber: string
   trade: string
   serviceArea: string
   description: string
@@ -112,6 +114,7 @@ type WorkerApiResponse = {
   contactName: string
   email: string
   phone?: string
+  taxNumber?: string
   trade: string
   verified?: boolean
   topWorker?: boolean
@@ -168,6 +171,7 @@ type WorkerProfileEditState = {
   businessName: string
   contactName: string
   phone: string
+  taxNumber: string
   trade: string
   serviceArea: string
   description: string
@@ -408,6 +412,7 @@ function App() {
     businessName: '',
     contactName: '',
     phone: '',
+    taxNumber: '',
     trade: '',
     serviceArea: '',
     description: '',
@@ -429,6 +434,7 @@ function App() {
     email: '',
     password: '',
     phone: '',
+    taxNumber: '',
     trade: '',
     serviceArea: '',
     description: '',
@@ -463,6 +469,7 @@ function App() {
     contactName: worker.contactName,
     email: worker.email,
     phone: worker.phone,
+    taxNumber: worker.taxNumber,
     trade: tradeLabelsByApiValue[worker.trade] ?? worker.trade,
     area: worker.serviceArea ?? 'Nincs megadva',
     rating: 'Új',
@@ -656,6 +663,7 @@ function App() {
       businessName: worker.name,
       contactName: worker.contactName ?? '',
       phone: worker.phone ?? '',
+      taxNumber: worker.taxNumber ?? '',
       trade: worker.trade,
       serviceArea: worker.area === 'Nincs megadva' ? '' : worker.area,
       description: worker.description,
@@ -1108,6 +1116,7 @@ function App() {
           businessName: profileEditForm.businessName,
           contactName: profileEditForm.contactName,
           phone: profileEditForm.phone || undefined,
+          taxNumber: profileEditForm.taxNumber || undefined,
           trade: tradeApiValues[profileEditForm.trade],
           serviceArea: profileEditForm.serviceArea || undefined,
           description: profileEditForm.description || undefined,
@@ -1151,6 +1160,7 @@ function App() {
           email: workerForm.email,
           password: workerForm.password,
           phone: workerForm.phone || undefined,
+          taxNumber: workerForm.taxNumber || undefined,
           trade: tradeApiValues[workerForm.trade],
           serviceArea: workerForm.serviceArea || undefined,
           description: workerForm.description || undefined,
@@ -1179,6 +1189,7 @@ function App() {
         email: '',
         password: '',
         phone: '',
+        taxNumber: '',
         trade: '',
         serviceArea: '',
         description: '',
@@ -1500,6 +1511,12 @@ function App() {
                   <dd>{selectedWorker.phone}</dd>
                 </div>
               )}
+              {selectedWorker.taxNumber && (
+                <div>
+                  <dt>Adószám</dt>
+                  <dd>{selectedWorker.taxNumber}</dd>
+                </div>
+              )}
             </dl>
           </div>
 
@@ -1566,6 +1583,16 @@ function App() {
                     maxLength={50}
                     value={profileEditForm.phone}
                     onChange={(event) => updateProfileEditForm('phone', event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="profile-tax-number">Adószám</label>
+                  <input
+                    id="profile-tax-number"
+                    maxLength={50}
+                    placeholder="12345678-1-42"
+                    value={profileEditForm.taxNumber}
+                    onChange={(event) => updateProfileEditForm('taxNumber', event.target.value)}
                   />
                 </div>
                 <div className="field">
@@ -2401,6 +2428,16 @@ function App() {
                 placeholder="+36 30 123 4567"
                 value={workerForm.phone}
                 onChange={(event) => updateWorkerForm('phone', event.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="worker-tax-number">Adószám</label>
+              <input
+                id="worker-tax-number"
+                maxLength={50}
+                placeholder="12345678-1-42"
+                value={workerForm.taxNumber}
+                onChange={(event) => updateWorkerForm('taxNumber', event.target.value)}
               />
             </div>
           </div>

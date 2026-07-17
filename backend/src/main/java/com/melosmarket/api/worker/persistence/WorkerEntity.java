@@ -45,6 +45,9 @@ public class WorkerEntity {
     @Column(length = 50)
     private String phone;
 
+    @Column(name = "tax_number", length = 50)
+    private String taxNumber;
+
     @Column(nullable = false)
     private boolean verified;
 
@@ -149,6 +152,14 @@ public class WorkerEntity {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getTaxNumber() {
+        return taxNumber;
+    }
+
+    public void setTaxNumber(String taxNumber) {
+        this.taxNumber = taxNumber;
     }
 
     public boolean isVerified() {
