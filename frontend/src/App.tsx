@@ -1578,7 +1578,7 @@ function App() {
             </dl>
           </div>
 
-          {isOwnProfile ? (
+          {isOwnProfile && (
             <div className="profile-panel">
               <p className="section-kicker">Saját profil</p>
               <div className={`trial-card ${selectedWorker.accessStatus === 'TRIAL_EXPIRED' ? 'expired' : ''}`}>
@@ -1732,12 +1732,6 @@ function App() {
                   onChange={uploadReferenceWorks}
                 />
               </label>
-            </div>
-          ) : (
-            <div className="profile-panel">
-              <p className="section-kicker">Nyilvános profil</p>
-              <h2>Referencia munkák és értékelések</h2>
-              <p>Bejelentkezett tulajdonosként itt tudnád szerkeszteni a saját profilodat és feltölteni a munkáidat.</p>
             </div>
           )}
         </section>
