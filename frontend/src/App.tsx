@@ -1427,7 +1427,6 @@ function App() {
             <h2>Kapcsolatfelvétel</h2>
             <p>
               Ha a munka illik hozzád, a megadott telefonszámon tudsz egyeztetni az ügyféllel.
-              Később ide kerülhet ajánlatküldés és üzenetküldés is.
             </p>
           </div>
         </section>
