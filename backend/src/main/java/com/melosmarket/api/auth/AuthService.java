@@ -11,6 +11,7 @@ import com.melosmarket.api.generated.model.LoginRequest;
 import com.melosmarket.api.generated.model.RegisterCustomerRequest;
 import com.melosmarket.api.generated.model.RegisterWorkerRequest;
 import com.melosmarket.api.generated.model.UserRole;
+import com.melosmarket.api.generated.model.VerifyEmailRequest;
 import com.melosmarket.api.generated.model.Worker;
 import com.melosmarket.api.worker.WorkerService;
 
@@ -28,6 +29,7 @@ public class AuthService {
     private final AuthContext authContext;
     private final WorkerService workerService;
     private final CustomerRepository customerRepository;
+    private final EmailVerificationService emailVerificationService;
 
     public AuthService(
             UserRepository userRepository,
@@ -35,13 +37,15 @@ public class AuthService {
             JwtService jwtService,
             AuthContext authContext,
             WorkerService workerService,
-            CustomerRepository customerRepository) {
+            CustomerRepository customerRepository,
+            EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.jwtService = jwtService;
         this.authContext = authContext;
         this.workerService = workerService;
         this.customerRepository = customerRepository;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional
@@ -54,8 +58,10 @@ public class AuthService {
         user.setEmail(request.getEmail().trim().toLowerCase());
         user.setPasswordHash(passwordHasher.hash(request.getPassword()));
         user.setRole(AccountRole.WORKER);
+        user.setEmailVerified(false);
         UserEntity savedUser = userRepository.save(user);
         Worker worker = workerService.createOwnedWorker(request, savedUser);
+        emailVerificationService.sendVerificationEmail(savedUser);
 
         return authResponse(savedUser, worker);
     }
@@ -70,8 +76,10 @@ public class AuthService {
         user.setEmail(request.getEmail().trim().toLowerCase());
         user.setPasswordHash(passwordHasher.hash(request.getPassword()));
         user.setRole(AccountRole.CUSTOMER);
+        user.setEmailVerified(false);
         UserEntity savedUser = userRepository.save(user);
         ensureCustomerProfile(savedUser.getEmail());
+        emailVerificationService.sendVerificationEmail(savedUser);
         return authResponse(savedUser, null);
     }
 
@@ -91,10 +99,26 @@ public class AuthService {
     @Transactional(readOnly = true)
     public CurrentUser getCurrentUser() {
         AuthenticatedUser authenticatedUser = authContext.requireUser();
+        UserEntity user = userRepository.findById(authenticatedUser.id())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Long workerId = authenticatedUser.role() == AccountRole.WORKER
                 ? workerService.getWorkerEntityForUser(authenticatedUser.id()).getId()
                 : null;
-        return currentUser(authenticatedUser.id(), authenticatedUser.email(), authenticatedUser.role(), workerId);
+        return currentUser(user.getId(), user.getEmail(), user.getRole(), workerId, user.isEmailVerified());
+    }
+
+    @Transactional
+    public CurrentUser verifyEmail(VerifyEmailRequest request) {
+        UserEntity user = emailVerificationService.verifyEmail(request.getToken());
+        Long workerId = user.getRole() == AccountRole.WORKER
+                ? workerService.getWorkerEntityForUser(user.getId()).getId()
+                : null;
+        return currentUser(user.getId(), user.getEmail(), user.getRole(), workerId, user.isEmailVerified());
+    }
+
+    @Transactional
+    public void resendVerificationEmail() {
+        emailVerificationService.resendVerificationEmail(authContext.requireUser().id());
     }
 
     private AuthResponse authResponse(UserEntity user, Worker worker) {
@@ -102,12 +126,13 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getRole(),
-                worker == null ? null : worker.getId()))
+                worker == null ? null : worker.getId(),
+                user.isEmailVerified()))
                 .worker(worker);
     }
 
-    private CurrentUser currentUser(Long id, String email, AccountRole role, Long workerId) {
-        return new CurrentUser(id, email, UserRole.valueOf(role.name())).workerId(workerId);
+    private CurrentUser currentUser(Long id, String email, AccountRole role, Long workerId, boolean emailVerified) {
+        return new CurrentUser(id, email, UserRole.valueOf(role.name()), emailVerified).workerId(workerId);
     }
 
     private CustomerEntity ensureCustomerProfile(String email) {

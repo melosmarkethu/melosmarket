@@ -155,6 +155,7 @@ type CurrentUser = {
   id: number
   email: string
   role: string
+  emailVerified: boolean
   workerId?: number
 }
 
@@ -438,6 +439,9 @@ function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [loginState, setLoginState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [loginMessage, setLoginMessage] = useState('')
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false)
+  const [verificationState, setVerificationState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [verificationMessage, setVerificationMessage] = useState('')
   const [customerForm, setCustomerForm] = useState<CustomerRegistrationFormState>({
     email: '',
     password: '',
@@ -604,6 +608,11 @@ function App() {
     localStorage.setItem('melosmarket_token', auth.token)
     setAuthToken(auth.token)
     setCurrentUser(auth.user)
+    if (!auth.user.emailVerified) {
+      setVerificationModalOpen(true)
+      setVerificationState('idle')
+      setVerificationMessage('Küldtünk egy megerősítő emailt. Kérjük, nyisd meg a levelet és erősítsd meg az email címed.')
+    }
     if (auth.worker) {
       const worker = workerFromApi(auth.worker)
       setWorkerCards((current) => [worker, ...current.filter((item) => item.id !== worker.id)])
@@ -622,6 +631,9 @@ function App() {
     setCurrentUser(null)
     setIsLoginOpen(false)
     setLoginMessage('')
+    setVerificationModalOpen(false)
+    setVerificationMessage('')
+    setVerificationState('idle')
     setSelectedWorker(null)
     setCustomerProblems([])
     setCustomerProblemsState('idle')
@@ -985,6 +997,10 @@ function App() {
       })
       .then((user) => {
         setCurrentUser(user)
+        if (!user.emailVerified) {
+          setVerificationModalOpen(true)
+          setVerificationMessage('Kérjük, erősítsd meg az email címedet a fiók teljes használatához.')
+        }
         if (user.role === 'CUSTOMER') {
           loadMyProblems().catch(() => undefined)
         }
@@ -994,6 +1010,61 @@ function App() {
       })
       .catch(logout)
   }, [authToken])
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('emailVerificationToken')
+    if (!token) {
+      return
+    }
+
+    setVerificationModalOpen(true)
+    setVerificationState('submitting')
+    setVerificationMessage('Email cím megerősítése folyamatban...')
+
+    fetch(`${apiBaseUrl}/auth/verify-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Email verification failed with status ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((user: CurrentUser) => {
+        setCurrentUser((current) => (current ? { ...current, emailVerified: true } : user))
+        setVerificationState('success')
+        setVerificationMessage('Sikeresen megerősítetted az email címedet. Köszönjük!')
+        window.history.replaceState(null, '', window.location.pathname)
+      })
+      .catch(() => {
+        setVerificationState('error')
+        setVerificationMessage('Nem sikerült megerősíteni az email címet. Lehet, hogy a link lejárt vagy már fel lett használva.')
+      })
+  }, [])
+
+  const resendVerificationEmail = async () => {
+    setVerificationState('submitting')
+    setVerificationMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/auth/resend-verification-email`, {
+        method: 'POST',
+        headers: authHeaders(),
+      })
+      if (!response.ok) {
+        throw new Error(`Resend verification failed with status ${response.status}`)
+      }
+      setVerificationState('success')
+      setVerificationMessage('Új megerősítő emailt küldtünk. Nézd meg a bejövő leveleket és a spam mappát is.')
+    } catch {
+      setVerificationState('error')
+      setVerificationMessage('Nem sikerült újraküldeni a megerősítő emailt.')
+    }
+  }
 
   const submitLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -2207,6 +2278,44 @@ function App() {
           )}
         </div>
       </header>
+
+      {verificationModalOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="verification-modal" role="dialog" aria-modal="true" aria-labelledby="email-verification-title">
+            <p className="section-kicker">Email megerősítés</p>
+            <h2 id="email-verification-title">Erősítsd meg az email címedet</h2>
+            <p>
+              A regisztráció befejezéséhez kattints a Melos Markettől kapott emailben található
+              megerősítő gombra.
+            </p>
+            {currentUser && (
+              <p className="verification-email">
+                Címzett: <strong>{currentUser.email}</strong>
+              </p>
+            )}
+            {verificationMessage && (
+              <p className={`form-message ${verificationState === 'error' ? 'error' : 'success'}`} role="status">
+                {verificationMessage}
+              </p>
+            )}
+            <div className="verification-actions">
+              {currentUser && !currentUser.emailVerified && (
+                <button
+                  className="button primary"
+                  type="button"
+                  disabled={verificationState === 'submitting'}
+                  onClick={resendVerificationEmail}
+                >
+                  {verificationState === 'submitting' ? 'Küldés...' : 'Email újraküldése'}
+                </button>
+              )}
+              <button className="button secondary" type="button" onClick={() => setVerificationModalOpen(false)}>
+                Bezárás
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <section className="hero-section" id="top">
         <div className="hero-copy">

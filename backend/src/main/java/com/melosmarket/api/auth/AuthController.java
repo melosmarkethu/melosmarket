@@ -6,6 +6,7 @@ import com.melosmarket.api.generated.model.CurrentUser;
 import com.melosmarket.api.generated.model.LoginRequest;
 import com.melosmarket.api.generated.model.RegisterCustomerRequest;
 import com.melosmarket.api.generated.model.RegisterWorkerRequest;
+import com.melosmarket.api.generated.model.VerifyEmailRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,5 +39,16 @@ public class AuthController implements AuthApi {
     @Override
     public ResponseEntity<AuthResponse> registerCustomer(RegisterCustomerRequest registerCustomerRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerCustomer(registerCustomerRequest));
+    }
+
+    @Override
+    public ResponseEntity<CurrentUser> verifyEmail(VerifyEmailRequest verifyEmailRequest) {
+        return ResponseEntity.ok(authService.verifyEmail(verifyEmailRequest));
+    }
+
+    @Override
+    public ResponseEntity<Void> resendVerificationEmail() {
+        authService.resendVerificationEmail();
+        return ResponseEntity.noContent().build();
     }
 }

@@ -185,6 +185,38 @@ paths:
                 $ref: '#/components/schemas/CurrentUser'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /auth/verify-email:
+    post:
+      tags:
+        - Auth
+      operationId: verifyEmail
+      summary: Verify an account email address with a token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+      responses:
+        '200':
+          description: Email verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /auth/resend-verification-email:
+    post:
+      tags:
+        - Auth
+      operationId: resendVerificationEmail
+      summary: Resend verification email for the logged-in account
+      responses:
+        '204':
+          description: Verification email sent if needed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /customers:
     post:
       tags:
@@ -687,6 +719,7 @@ components:
         - id
         - email
         - role
+        - emailVerified
       properties:
         id:
           type: integer
@@ -696,10 +729,21 @@ components:
           format: email
         role:
           $ref: '#/components/schemas/UserRole'
+        emailVerified:
+          type: boolean
         workerId:
           type: integer
           format: int64
           nullable: true
+    VerifyEmailRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          minLength: 20
+          maxLength: 160
     LoginRequest:
       type: object
       required:

@@ -32,6 +32,12 @@ services:
       MELOSMARKET_WORKER_REFERENCES_DIR: /app/uploads/worker-references
       MELOSMARKET_PROBLEM_IMAGES_DIR: /app/uploads/problem-images
       MELOSMARKET_CORS_ALLOWED_ORIGINS: ${MELOSMARKET_CORS_ALLOWED_ORIGINS:-https://melosmarket.hu,https://www.melosmarket.hu}
+      MELOSMARKET_PUBLIC_BASE_URL: ${MELOSMARKET_PUBLIC_BASE_URL:-https://melosmarket.hu}
+      MELOSMARKET_EMAIL_FROM: ${MELOSMARKET_EMAIL_FROM:-melosmarket.hu@gmail.com}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
       SERVER_FORWARD_HEADERS_STRATEGY: framework
     volumes:
       - uploaded-files:/app/uploads

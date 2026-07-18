@@ -482,6 +482,48 @@ textarea:focus {
   background: #ffe5e1;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(17, 24, 39, 0.42);
+  padding: 20px;
+}
+
+.verification-modal {
+  width: min(100%, 520px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  padding: 28px;
+}
+
+.verification-modal h2 {
+  margin: 0 0 10px;
+}
+
+.verification-modal p {
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.verification-email {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 12px 14px;
+}
+
+.verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
