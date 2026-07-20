@@ -2895,9 +2895,9 @@ function App() {
       <section className="worker-signup" id="worker-signup">
         <div>
           <p className="section-kicker">Szerezz több munkát</p>
-          <h2>A szakemberek már most regisztrálhatnak, hogy készen álljanak az induláskor.</h2>
+          <h2>Regisztrálj szakemberként, hogy az ügyfelek könnyebben megtaláljanak.</h2>
           <p className="muted-text">
-            A regisztráció mostantól fiókot is létrehoz, így később csak te tudod szerkeszteni a saját profilodat.
+            A regisztráció fiókot is létrehoz, így csak te tudod szerkeszteni a saját profilodat és referenciáidat.
           </p>
         </div>
 
