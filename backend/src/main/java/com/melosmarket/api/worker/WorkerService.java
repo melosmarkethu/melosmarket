@@ -48,6 +48,7 @@ public class WorkerService {
     private final WorkerMapper workerMapper;
     private final AuthContext authContext;
     private final Path referenceUploadDir;
+    private final Path profileImageUploadDir;
 
     public WorkerService(
             WorkerRepository workerRepository,
@@ -55,13 +56,15 @@ public class WorkerService {
             WorkerReviewRepository reviewRepository,
             WorkerMapper workerMapper,
             AuthContext authContext,
-            @Value("${melosmarket.uploads.worker-references-dir}") String referenceUploadDir) {
+            @Value("${melosmarket.uploads.worker-references-dir}") String referenceUploadDir,
+            @Value("${melosmarket.uploads.worker-profile-images-dir}") String profileImageUploadDir) {
         this.workerRepository = workerRepository;
         this.referenceImageRepository = referenceImageRepository;
         this.reviewRepository = reviewRepository;
         this.workerMapper = workerMapper;
         this.authContext = authContext;
         this.referenceUploadDir = Path.of(referenceUploadDir);
+        this.profileImageUploadDir = Path.of(profileImageUploadDir);
     }
 
     @Transactional
@@ -168,6 +171,37 @@ public class WorkerService {
     }
 
     @Transactional
+    public Worker uploadMyWorkerProfileImage(MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image is required");
+        }
+
+        String contentType = image.getContentType();
+        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPG and PNG images are supported");
+        }
+
+        WorkerEntity worker = getWorkerEntityForUser(authContext.requireUser().id());
+        String extension = "image/png".equals(contentType) ? ".png" : ".jpg";
+        String filename = worker.getId() + "-" + UUID.randomUUID() + extension;
+        Path target = profileImageUploadDir.resolve(filename).normalize();
+        String previousStoragePath = worker.getProfileImageStoragePath();
+
+        try {
+            Files.createDirectories(profileImageUploadDir);
+            image.transferTo(target);
+        } catch (IOException exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not store profile image");
+        }
+
+        worker.setProfileImageStoragePath(target.toString());
+        worker.setProfileImageUrl("/api/uploads/worker-profile-images/" + filename);
+        deleteStoredFile(previousStoragePath);
+
+        return workerMapper.toApi(worker);
+    }
+
+    @Transactional
     public WorkerReferenceImage uploadMyWorkerReference(String title, MultipartFile image) {
         if (image == null || image.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image is required");
@@ -211,11 +245,7 @@ public class WorkerService {
 
         Path storagePath = Path.of(referenceImage.getStoragePath()).normalize();
         referenceImageRepository.delete(referenceImage);
-        try {
-            Files.deleteIfExists(storagePath);
-        } catch (IOException exception) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not delete reference image file");
-        }
+        deleteStoredFile(storagePath.toString());
     }
 
     @Transactional
@@ -270,6 +300,17 @@ public class WorkerService {
             return "Referencia munka";
         }
         return filename.replaceFirst("\\.[^.]+$", "");
+    }
+
+    private void deleteStoredFile(String storagePath) {
+        if (storagePath == null || storagePath.isBlank()) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(Path.of(storagePath).normalize());
+        } catch (IOException exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not delete image file");
+        }
     }
 
     private String blankToNull(String value) {

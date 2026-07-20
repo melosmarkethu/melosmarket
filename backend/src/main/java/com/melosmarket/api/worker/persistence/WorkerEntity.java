@@ -48,6 +48,12 @@ public class WorkerEntity {
     @Column(name = "tax_number", length = 50)
     private String taxNumber;
 
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
+    @Column(name = "profile_image_storage_path", length = 500)
+    private String profileImageStoragePath;
+
     @Column(nullable = false)
     private boolean verified;
 
@@ -160,6 +166,22 @@ public class WorkerEntity {
 
     public void setTaxNumber(String taxNumber) {
         this.taxNumber = taxNumber;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public String getProfileImageStoragePath() {
+        return profileImageStoragePath;
+    }
+
+    public void setProfileImageStoragePath(String profileImageStoragePath) {
+        this.profileImageStoragePath = profileImageStoragePath;
     }
 
     public boolean isVerified() {

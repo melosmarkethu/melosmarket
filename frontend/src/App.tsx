@@ -54,6 +54,7 @@ type WorkerCard = {
   email?: string
   phone?: string
   taxNumber?: string
+  profileImageUrl?: string
   trade: string
   area: string
   rating: string
@@ -117,6 +118,7 @@ type WorkerApiResponse = {
   email: string
   phone?: string
   taxNumber?: string
+  profileImageUrl?: string
   trade: string
   verified?: boolean
   topWorker?: boolean
@@ -224,6 +226,13 @@ const accessStatusLabels: Record<WorkerAccessStatus, string> = {
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
 const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '')
+
+const resolveApiImageUrl = (imageUrl?: string) => {
+  if (!imageUrl) {
+    return undefined
+  }
+  return imageUrl.startsWith('/api') ? `${apiOrigin}${imageUrl}` : imageUrl
+}
 
 const slugify = (value: string) =>
   value
@@ -520,6 +529,7 @@ function App() {
     email: worker.email,
     phone: worker.phone,
     taxNumber: worker.taxNumber,
+    profileImageUrl: resolveApiImageUrl(worker.profileImageUrl),
     trade: tradeLabelsByApiValue[worker.trade] ?? worker.trade,
     area: worker.serviceArea ?? 'Nincs megadva',
     rating: 'Új',
@@ -539,7 +549,7 @@ function App() {
     referenceWorks: (worker.referenceImages ?? []).map((reference) => ({
       id: String(reference.id),
       title: reference.title,
-      imageUrl: reference.imageUrl.startsWith('/api') ? `${apiOrigin}${reference.imageUrl}` : reference.imageUrl,
+      imageUrl: resolveApiImageUrl(reference.imageUrl) ?? reference.imageUrl,
     })),
     reviews: (worker.reviews ?? []).map((review) => ({
       id: String(review.id),
@@ -555,7 +565,7 @@ function App() {
   const problemImageFromApi = (image: ProblemImageApiResponse): ProblemImage => ({
     id: String(image.id),
     title: image.title,
-    imageUrl: image.imageUrl.startsWith('/api') ? `${apiOrigin}${image.imageUrl}` : image.imageUrl,
+    imageUrl: resolveApiImageUrl(image.imageUrl) ?? image.imageUrl,
   })
 
   const problemFromApi = (problem: ProblemApiResponse): ProblemPost => ({
@@ -823,9 +833,7 @@ function App() {
           return {
             id: String(uploadedReference.id),
             title: uploadedReference.title,
-            imageUrl: uploadedReference.imageUrl.startsWith('/api')
-              ? `${apiOrigin}${uploadedReference.imageUrl}`
-              : uploadedReference.imageUrl,
+            imageUrl: resolveApiImageUrl(uploadedReference.imageUrl) ?? uploadedReference.imageUrl,
           }
         }),
       )
@@ -843,6 +851,40 @@ function App() {
       event.target.value = ''
     } catch {
       alert('Nem sikerült feltölteni a referencia képet. Jelentkezz be újra, vagy próbáld később.')
+    }
+  }
+
+  const uploadProfileImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !selectedWorker || !authToken) {
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch(`${apiBaseUrl}/workers/me/profile-image`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Profile image upload failed with status ${response.status}`)
+      }
+
+      const updatedWorker = workerFromApi(await response.json())
+      setSelectedWorker(updatedWorker)
+      setWorkerCards((current) =>
+        current.map((worker) => (worker.id === updatedWorker.id ? updatedWorker : worker)),
+      )
+      setProfileEditState('success')
+      setProfileEditMessage('A profilkép frissítve.')
+      event.target.value = ''
+    } catch {
+      setProfileEditState('error')
+      setProfileEditMessage('Nem sikerült feltölteni a profilképet.')
     }
   }
 
@@ -1819,6 +1861,7 @@ function App() {
       Boolean(selectedWorker.contactName?.trim()),
       Boolean(selectedWorker.phone?.trim()),
       Boolean(selectedWorker.email?.trim()),
+      Boolean(selectedWorker.profileImageUrl),
       selectedWorker.trade !== 'Nincs megadva',
       selectedWorker.area !== 'Nincs megadva',
       hasIntroduction,
@@ -1826,12 +1869,13 @@ function App() {
       selectedWorker.referenceWorks.length >= 3,
       selectedWorker.referenceWorks.length >= 5,
     ].filter(Boolean).length
-    const profileCompletion = Math.round((completedProfileParts / 10) * 100)
+    const profileCompletion = Math.round((completedProfileParts / 11) * 100)
     const profileCompletionTips = [
       missingReferenceCount > 0
         ? `Még tölts fel ${missingReferenceCount} képet`
         : '',
       !hasIntroduction ? 'írj részletesebb bemutatkozást' : '',
+      !selectedWorker.profileImageUrl ? 'tölts fel profilképet' : '',
       !selectedWorker.phone ? 'adj meg telefonszámot' : '',
       selectedWorker.area === 'Nincs megadva' ? 'add meg a szolgáltatási területedet' : '',
     ].filter(Boolean)
@@ -1864,13 +1908,18 @@ function App() {
         <section className="profile-hero">
           <div>
             <p className="eyebrow">Szakember profil</p>
-            <div className="profile-title-row">
-              <h1>{selectedWorker.name}</h1>
-              {selectedWorker.verified && (
-                <span className="verified-checkmark" aria-label="Ellenőrzött szakember" title="Ellenőrzött szakember">
-                  ✓
-                </span>
+            <div className="profile-heading-row">
+              {selectedWorker.profileImageUrl && (
+                <img className="profile-avatar" src={selectedWorker.profileImageUrl} alt={`${selectedWorker.name} profilképe`} />
               )}
+              <div className="profile-title-row">
+                <h1>{selectedWorker.name}</h1>
+                {selectedWorker.verified && (
+                  <span className="verified-checkmark" aria-label="Ellenőrzött szakember" title="Ellenőrzött szakember">
+                    ✓
+                  </span>
+                )}
+              </div>
             </div>
             <p>{selectedWorker.description}</p>
             <div className="profile-tags">
@@ -1964,6 +2013,23 @@ function App() {
                 </div>
               </div>
               <h2>Profil szerkesztése</h2>
+              <label className="profile-image-upload" htmlFor="profile-image-upload">
+                {selectedWorker.profileImageUrl ? (
+                  <img src={selectedWorker.profileImageUrl} alt="Jelenlegi profilkép" />
+                ) : (
+                  <span>{selectedWorker.name.charAt(0).toUpperCase()}</span>
+                )}
+                <div>
+                  <strong>Profilkép</strong>
+                  <small>JPG vagy PNG kép. Ez kis méretben megjelenik a szakember kártyádon.</small>
+                </div>
+                <input
+                  id="profile-image-upload"
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={uploadProfileImage}
+                />
+              </label>
               <form className="profile-edit-form" onSubmit={submitProfileEdit}>
                 <div className="field">
                   <label htmlFor="profile-business-name">Vállalkozás neve</label>
@@ -2667,7 +2733,16 @@ function App() {
                   {worker.verified ? 'Ellenőrzött' : worker.rating === 'Új' ? 'Új' : `★ ${worker.rating}`}
                 </span>
               </div>
-              <h3>{worker.name}</h3>
+              <div className="worker-card-title">
+                <div className="worker-card-avatar" aria-hidden="true">
+                  {worker.profileImageUrl ? (
+                    <img src={worker.profileImageUrl} alt="" />
+                  ) : (
+                    <span>{worker.name.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <h3>{worker.name}</h3>
+              </div>
               {activeWorkerBadges(worker).length > 0 && (
                 <div className="worker-card-badges">
                   {activeWorkerBadges(worker).slice(0, 3).map((badge) => (
@@ -2700,19 +2775,36 @@ function App() {
         </div>
 
         <div className="job-list">
-          {problemPosts.map((problem) => (
-            <button className="job-row job-row-button" key={problem.id ?? problem.title} type="button" onClick={() => openProblemProfile(problem)}>
-              <div>
-                <span className="trade-pill">{problem.trade}</span>
-                <h3>{problem.title}</h3>
-              </div>
-              <div className="job-meta">
-                <span>{problem.location}</span>
-                <span>{problem.posted}</span>
-              </div>
-            </button>
-          ))}
+          {(isWorker ? problemPosts : problemPosts.slice(0, 5)).map((problem) => {
+            const problemRow = (
+              <>
+                <div>
+                  <span className="trade-pill">{problem.trade}</span>
+                  <h3>{problem.title}</h3>
+                </div>
+                <div className="job-meta">
+                  <span>{problem.location}</span>
+                  <span>{problem.posted}</span>
+                </div>
+              </>
+            )
+
+            return isWorker ? (
+              <button className="job-row job-row-button" key={problem.id ?? problem.title} type="button" onClick={() => openProblemProfile(problem)}>
+                {problemRow}
+              </button>
+            ) : (
+              <article className="job-row job-row-preview" key={problem.id ?? problem.title}>
+                {problemRow}
+              </article>
+            )
+          })}
         </div>
+        {!isWorker && (
+          <p className="empty-note">
+            A teljes lista és a probléma részletei bejelentkezett szakemberként érhetők el.
+          </p>
+        )}
       </section>
 
       {isAdmin && (

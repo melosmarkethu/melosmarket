@@ -15,7 +15,7 @@ RUN addgroup -S melosmarket && adduser -S melosmarket -G melosmarket
 
 COPY --from=build /app/target/*.jar /app/app.jar
 
-RUN mkdir -p /app/uploads/worker-references /app/uploads/problem-images \
+RUN mkdir -p /app/uploads/worker-references /app/uploads/worker-profile-images /app/uploads/problem-images \
     && chown -R melosmarket:melosmarket /app
 
 USER melosmarket

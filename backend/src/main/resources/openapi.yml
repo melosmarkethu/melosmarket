@@ -389,6 +389,37 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /workers/me/profile-image:
+    post:
+      tags:
+        - Workers
+      operationId: uploadMyWorkerProfileImage
+      summary: Upload a profile image for the logged-in worker profile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Worker profile image updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worker'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /workers/me/references:
     post:
       tags:
@@ -862,6 +893,10 @@ components:
           type: string
           nullable: true
           example: '12345678-1-42'
+        profileImageUrl:
+          type: string
+          nullable: true
+          example: /api/uploads/worker-profile-images/10-avatar.jpg
         verified:
           type: boolean
           example: false

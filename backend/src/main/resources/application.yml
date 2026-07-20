@@ -38,6 +38,7 @@ melosmarket:
     allowed-origins: ${MELOSMARKET_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   uploads:
     worker-references-dir: ${MELOSMARKET_WORKER_REFERENCES_DIR:uploads/worker-references}
+    worker-profile-images-dir: ${MELOSMARKET_WORKER_PROFILE_IMAGES_DIR:uploads/worker-profile-images}
     problem-images-dir: ${MELOSMARKET_PROBLEM_IMAGES_DIR:uploads/problem-images}
   public-base-url: ${MELOSMARKET_PUBLIC_BASE_URL:http://localhost:5173}
   email:
@@ -50,6 +51,9 @@ server:
     context-path: /api
 
 management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
   endpoints:
     web:
       exposure:

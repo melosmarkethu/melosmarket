@@ -631,6 +631,33 @@ textarea:focus {
   gap: 12px;
 }
 
+.worker-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 10px;
+}
+
+.worker-card-avatar {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--brand);
+  font-weight: 950;
+  box-shadow: 0 10px 24px rgba(15, 35, 26, 0.12);
+}
+
+.worker-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .trade-pill {
   display: inline-flex;
   width: fit-content;
@@ -693,6 +720,10 @@ textarea:focus {
   margin: 18px 0 10px;
   color: var(--text-strong);
   font-size: 1.25rem;
+}
+
+.worker-card-title h3 {
+  margin: 0;
 }
 
 .worker-card p {
@@ -827,6 +858,10 @@ textarea:focus {
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.job-row-preview {
+  cursor: default;
 }
 
 .job-row-button:hover,
@@ -1056,6 +1091,22 @@ textarea:focus {
   gap: 12px;
 }
 
+.profile-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.profile-avatar {
+  width: 92px;
+  height: 92px;
+  flex: 0 0 auto;
+  border: 3px solid rgba(255, 255, 255, 0.78);
+  border-radius: 999px;
+  object-fit: cover;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+}
+
 .verified-checkmark {
   display: inline-grid;
   width: 38px;
@@ -1197,6 +1248,52 @@ textarea:focus {
 }
 
 .upload-box input {
+  display: none;
+}
+
+.profile-image-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.profile-image-upload:hover {
+  border-color: var(--brand);
+}
+
+.profile-image-upload img,
+.profile-image-upload > span {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--brand);
+  object-fit: cover;
+  font-size: 1.4rem;
+  font-weight: 950;
+}
+
+.profile-image-upload strong,
+.profile-image-upload small {
+  display: block;
+}
+
+.profile-image-upload small {
+  margin-top: 4px;
+  color: var(--text);
+}
+
+.profile-image-upload input {
   display: none;
 }
 
@@ -1348,6 +1445,11 @@ textarea:focus {
   }
 
   .job-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-heading-row {
     align-items: flex-start;
     flex-direction: column;
   }

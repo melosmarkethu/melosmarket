@@ -13,6 +13,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mail.MailException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -59,7 +60,7 @@ public class EmailVerificationService {
 
         try {
             sendEmail(user.getEmail(), verificationLink(token.getToken()));
-        } catch (MessagingException exception) {
+        } catch (MessagingException | MailException exception) {
             LOGGER.error("Could not send email verification message to {}", user.getEmail(), exception);
         }
     }

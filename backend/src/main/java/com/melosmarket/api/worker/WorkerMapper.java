@@ -59,6 +59,7 @@ class WorkerMapper {
                 entity.getCreatedAt())
                 .phone(entity.getPhone())
                 .taxNumber(entity.getTaxNumber())
+                .profileImageUrl(entity.getProfileImageUrl())
                 .verified(entity.isVerified())
                 .topWorker(entity.isTopWorker())
                 .manyReferences(entity.isManyReferences())

@@ -52,6 +52,11 @@ public class WorkersController implements WorkersApi {
     }
 
     @Override
+    public ResponseEntity<Worker> uploadMyWorkerProfileImage(MultipartFile image) {
+        return ResponseEntity.ok(workerService.uploadMyWorkerProfileImage(image));
+    }
+
+    @Override
     public ResponseEntity<WorkerReferenceImage> uploadMyWorkerReference(MultipartFile image, String title) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(workerService.uploadMyWorkerReference(title, image));
