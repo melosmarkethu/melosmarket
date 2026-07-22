@@ -440,6 +440,7 @@ function App() {
   const [selectedWorker, setSelectedWorker] = useState<WorkerCard | null>(null)
   const [selectedProblem, setSelectedProblem] = useState<ProblemPost | null>(null)
   const [isWorkerSearchPage, setIsWorkerSearchPage] = useState(false)
+  const [isProblemSearchPage, setIsProblemSearchPage] = useState(false)
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('melosmarket_token') ?? '')
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [loginForm, setLoginForm] = useState<LoginFormState>({
@@ -504,6 +505,12 @@ function App() {
     location: '',
     phone: '',
   })
+  const [problemSearch, setProblemSearch] = useState({
+    trade: '',
+    location: '',
+  })
+  const [problemSearchStatus, setProblemSearchStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [problemSearchMessage, setProblemSearchMessage] = useState('')
   const [problemEditForm, setProblemEditForm] = useState<ProblemFormState>({
     title: '',
     description: '',
@@ -673,8 +680,17 @@ function App() {
     return mappedWorkers
   }
 
-  const loadProblems = async (useFallbackWhenEmpty = true) => {
-    const response = await fetch(`${apiBaseUrl}/problems`)
+  const loadProblems = async (useFallbackWhenEmpty = true, search = problemSearch) => {
+    const params = new URLSearchParams()
+    if (search.trade) {
+      params.set('trade', tradeApiValues[search.trade])
+    }
+    if (search.location.trim()) {
+      params.set('location', search.location.trim())
+    }
+
+    const query = params.toString()
+    const response = await fetch(`${apiBaseUrl}/problems${query ? `?${query}` : ''}`)
     if (!response.ok) {
       throw new Error(`Problem search failed with status ${response.status}`)
     }
@@ -740,6 +756,7 @@ function App() {
 
   const openWorkerProfile = (worker: WorkerCard, updatePath = true) => {
     setIsWorkerSearchPage(false)
+    setIsProblemSearchPage(false)
     setSelectedWorker(worker)
     setProfileEditForm({
       businessName: worker.name,
@@ -771,6 +788,7 @@ function App() {
   const openWorkerSearchPage = (updatePath = true) => {
     setSelectedWorker(null)
     setSelectedProblem(null)
+    setIsProblemSearchPage(false)
     setIsWorkerSearchPage(true)
     if (updatePath) {
       window.history.pushState(null, '', '/szakemberek')
@@ -785,6 +803,7 @@ function App() {
 
   const showProblemProfile = (problem: ProblemPost) => {
     setIsWorkerSearchPage(false)
+    setIsProblemSearchPage(false)
     setSelectedProblem(problem)
     setProblemEditForm({
       title: problem.title,
@@ -822,6 +841,22 @@ function App() {
 
   const closeProblemProfile = () => {
     setSelectedProblem(null)
+    window.history.pushState(null, '', '/')
+  }
+
+  const openProblemSearchPage = (updatePath = true) => {
+    setSelectedWorker(null)
+    setSelectedProblem(null)
+    setIsWorkerSearchPage(false)
+    setIsProblemSearchPage(true)
+    if (updatePath) {
+      window.history.pushState(null, '', '/munkak')
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const closeProblemSearchPage = () => {
+    setIsProblemSearchPage(false)
     window.history.pushState(null, '', '/')
   }
 
@@ -1018,6 +1053,7 @@ function App() {
         setSelectedWorker(null)
         setSelectedProblem(null)
         setIsWorkerSearchPage(false)
+        setIsProblemSearchPage(false)
         return
       }
       if (ignoredRouteSlugs.has(pathSlug)) {
@@ -1027,6 +1063,12 @@ function App() {
         setSelectedWorker(null)
         setSelectedProblem(null)
         openWorkerSearchPage(false)
+        return
+      }
+      if (pathSlug === 'munkak') {
+        setSelectedWorker(null)
+        setSelectedProblem(null)
+        openProblemSearchPage(false)
         return
       }
 
@@ -1241,6 +1283,50 @@ function App() {
       setWorkerCards(initialWorkers)
       setWorkerSearchStatus('error')
       setWorkerSearchMessage('Nem sikerült újratölteni a szakembereket.')
+    }
+  }
+
+  const submitProblemSearch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setProblemSearchStatus('loading')
+    setProblemSearchMessage('')
+
+    try {
+      const results = await loadProblems(false, problemSearch)
+      openProblemSearchPage()
+      const hasFilters = Boolean(problemSearch.trade || problemSearch.location.trim())
+      if (results.length === 0) {
+        setProblemSearchMessage(
+          hasFilters
+            ? 'Nincs találat erre a városra és munkatípusra. Próbálj meg másik szűrést.'
+            : 'Még nincs nyitott probléma az adatbázisban.',
+        )
+      } else {
+        setProblemSearchMessage(`${results.length} nyitott munka található a megadott szűrésre.`)
+      }
+      setProblemSearchStatus('idle')
+    } catch {
+      setProblemSearchStatus('error')
+      setProblemSearchMessage('Nem sikerült betölteni a nyitott munkákat. Ellenőrizd, hogy fut-e a backend.')
+    }
+  }
+
+  const clearProblemSearch = async () => {
+    const emptySearch = {
+      trade: '',
+      location: '',
+    }
+    setProblemSearch(emptySearch)
+    setProblemSearchMessage('')
+    setProblemSearchStatus('loading')
+
+    try {
+      await loadProblems(true, emptySearch)
+      setProblemSearchStatus('idle')
+    } catch {
+      setProblemPosts(initialProblems)
+      setProblemSearchStatus('error')
+      setProblemSearchMessage('Nem sikerült újratölteni a nyitott munkákat.')
     }
   }
 
@@ -1721,6 +1807,35 @@ function App() {
           <p>{emptyDescription}</p>
         </div>
       )}
+    </div>
+  )
+
+  const renderProblemList = (problems: ProblemPost[]) => (
+    <div className="job-list">
+      {problems.map((problem) => {
+        const problemRow = (
+          <>
+            <div>
+              <span className="trade-pill">{problem.trade}</span>
+              <h3>{problem.title}</h3>
+            </div>
+            <div className="job-meta">
+              <span>{problem.location}</span>
+              <span>{problem.posted}</span>
+            </div>
+          </>
+        )
+
+        return isWorker ? (
+          <button className="job-row job-row-button" key={problem.id ?? problem.title} type="button" onClick={() => openProblemProfile(problem)}>
+            {problemRow}
+          </button>
+        ) : (
+          <article className="job-row job-row-preview" key={problem.id ?? problem.title}>
+            {problemRow}
+          </article>
+        )
+      })}
     </div>
   )
 
@@ -2402,6 +2517,97 @@ function App() {
     )
   }
 
+  if (isProblemSearchPage) {
+    return (
+      <main className="page-shell">
+        <header className="site-header">
+          <button className="brand brand-button" type="button" onClick={closeProblemSearchPage}>
+            <span className="brand-mark">M</span>
+            <span>Melos Market</span>
+          </button>
+
+          <button className="header-action" type="button" onClick={closeProblemSearchPage}>
+            Vissza a főoldalra
+          </button>
+        </header>
+
+        <section className="section-block workers-search-page">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Nyitott munkák</p>
+              <h1>Találj hozzád illő munkákat a közeledben.</h1>
+            </div>
+          </div>
+
+          <form className="search-panel workers-search-panel" aria-label="Nyitott munkák keresése" onSubmit={submitProblemSearch}>
+            <div className="field">
+              <label htmlFor="problems-page-location">Melyik városban keresel munkát?</label>
+              <input
+                id="problems-page-location"
+                name="location"
+                placeholder="Budapest, Debrecen, Szeged"
+                value={problemSearch.location}
+                onChange={(event) =>
+                  setProblemSearch((current) => ({
+                    ...current,
+                    location: event.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="problems-page-trade">Milyen típusú munkát keresel?</label>
+              <select
+                id="problems-page-trade"
+                name="trade"
+                value={problemSearch.trade}
+                onChange={(event) =>
+                  setProblemSearch((current) => ({
+                    ...current,
+                    trade: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Minden munkatípus</option>
+                {trades.map((trade) => (
+                  <option key={trade}>{trade}</option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="button primary" disabled={problemSearchStatus === 'loading'}>
+              {problemSearchStatus === 'loading' ? 'Keresés...' : 'Keresés'}
+            </button>
+            <button type="button" className="button ghost" onClick={clearProblemSearch}>
+              Szűrők törlése
+            </button>
+          </form>
+
+          {problemSearchMessage && (
+            <p
+              className={`form-message ${problemSearchStatus === 'error' ? 'error' : 'success'}`}
+              role="status"
+            >
+              {problemSearchMessage}
+            </p>
+          )}
+
+          {problemPosts.length > 0 ? renderProblemList(problemPosts) : (
+            <div className="empty-results">
+              <h3>Nincs találat</h3>
+              <p>Próbálj másik várost vagy munkatípust választani, vagy töröld a szűrőket.</p>
+            </div>
+          )}
+
+          {!isWorker && (
+            <p className="empty-note">
+              A munka részletei csak bejelentkezett szakemberként nyithatók meg.
+            </p>
+          )}
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="page-shell">
       <header className="site-header">
@@ -2421,7 +2627,15 @@ function App() {
             Szakemberek keresése
           </a>
           <a href="#problem">Probléma feltöltése</a>
-          <a href="#jobs">Nyitott munkák</a>
+          <a
+            href="/munkak"
+            onClick={(event) => {
+              event.preventDefault()
+              openProblemSearchPage()
+            }}
+          >
+            Nyitott munkák
+          </a>
           {isAdmin && <a href="#admin">Admin</a>}
         </nav>
 
@@ -2791,7 +3005,14 @@ function App() {
               <p className="panel-text">
                 Szakemberként a nyitott munkákat böngészheted, és a saját profilodat szerkesztheted.
               </p>
-              <a className="button primary" href="#jobs">
+              <a
+                className="button primary"
+                href="/munkak"
+                onClick={(event) => {
+                  event.preventDefault()
+                  openProblemSearchPage()
+                }}
+              >
                 Nyitott munkák megtekintése
               </a>
             </>
@@ -2913,38 +3134,21 @@ function App() {
             <p className="section-kicker">Szakembereknek</p>
             <h2>Nyitott problémák, amelyek a megfelelő szakemberre várnak.</h2>
           </div>
-          <a href="#top">Keresés szakma szerint</a>
+          <a
+            href="/munkak"
+            onClick={(event) => {
+              event.preventDefault()
+              openProblemSearchPage()
+            }}
+          >
+            Összes nyitott munka
+          </a>
         </div>
 
-        <div className="job-list">
-          {(isWorker ? problemPosts : problemPosts.slice(0, 5)).map((problem) => {
-            const problemRow = (
-              <>
-                <div>
-                  <span className="trade-pill">{problem.trade}</span>
-                  <h3>{problem.title}</h3>
-                </div>
-                <div className="job-meta">
-                  <span>{problem.location}</span>
-                  <span>{problem.posted}</span>
-                </div>
-              </>
-            )
-
-            return isWorker ? (
-              <button className="job-row job-row-button" key={problem.id ?? problem.title} type="button" onClick={() => openProblemProfile(problem)}>
-                {problemRow}
-              </button>
-            ) : (
-              <article className="job-row job-row-preview" key={problem.id ?? problem.title}>
-                {problemRow}
-              </article>
-            )
-          })}
-        </div>
+        {renderProblemList(problemPosts.slice(0, 5))}
         {!isWorker && (
           <p className="empty-note">
-            A teljes lista és a probléma részletei bejelentkezett szakemberként érhetők el.
+            A teljes lista és a munka részletei bejelentkezett szakemberként érhetők el.
           </p>
         )}
       </section>
