@@ -439,6 +439,7 @@ const initialProblems: ProblemPost[] = [
 function App() {
   const [selectedWorker, setSelectedWorker] = useState<WorkerCard | null>(null)
   const [selectedProblem, setSelectedProblem] = useState<ProblemPost | null>(null)
+  const [isWorkerSearchPage, setIsWorkerSearchPage] = useState(false)
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('melosmarket_token') ?? '')
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [loginForm, setLoginForm] = useState<LoginFormState>({
@@ -608,6 +609,7 @@ function App() {
   const isAdmin = currentUser?.role === 'ADMIN'
   const currentCustomerProblems = customerProblems.slice(0, 5)
   const recentCustomerProblems = customerProblems.slice(0, 3)
+  const highlightedWorkers = workerCards.filter((worker) => worker.topWorker)
   const activeWorkerBadges = (worker: WorkerCard) => [
     ...workerBadgeDefinitions.filter((badge) => worker[badge.key]),
     { key: 'availability', label: workerAvailabilityLabels[worker.availabilityStatus] },
@@ -737,6 +739,7 @@ function App() {
   }
 
   const openWorkerProfile = (worker: WorkerCard, updatePath = true) => {
+    setIsWorkerSearchPage(false)
     setSelectedWorker(worker)
     setProfileEditForm({
       businessName: worker.name,
@@ -765,7 +768,23 @@ function App() {
     window.history.pushState(null, '', '/')
   }
 
+  const openWorkerSearchPage = (updatePath = true) => {
+    setSelectedWorker(null)
+    setSelectedProblem(null)
+    setIsWorkerSearchPage(true)
+    if (updatePath) {
+      window.history.pushState(null, '', '/szakemberek')
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const closeWorkerSearchPage = () => {
+    setIsWorkerSearchPage(false)
+    window.history.pushState(null, '', '/')
+  }
+
   const showProblemProfile = (problem: ProblemPost) => {
+    setIsWorkerSearchPage(false)
     setSelectedProblem(problem)
     setProblemEditForm({
       title: problem.title,
@@ -998,9 +1017,16 @@ function App() {
       if (!pathSlug) {
         setSelectedWorker(null)
         setSelectedProblem(null)
+        setIsWorkerSearchPage(false)
         return
       }
       if (ignoredRouteSlugs.has(pathSlug)) {
+        return
+      }
+      if (pathSlug === 'szakemberek') {
+        setSelectedWorker(null)
+        setSelectedProblem(null)
+        openWorkerSearchPage(false)
         return
       }
 
@@ -1181,6 +1207,7 @@ function App() {
 
     try {
       const results = await loadWorkers(workerSearch)
+      openWorkerSearchPage()
       const hasFilters = Boolean(workerSearch.trade || workerSearch.serviceArea.trim())
       if (results.length === 0) {
         setWorkerSearchMessage(
@@ -1654,6 +1681,48 @@ function App() {
       setProblemEditMessage('Nem sikerült törölni a képet.')
     }
   }
+
+  const renderWorkerGrid = (workers: WorkerCard[], emptyTitle: string, emptyDescription: string) => (
+    <div className="worker-grid">
+      {workers.length > 0 ? workers.map((worker) => (
+        <button className="worker-card worker-card-button" key={worker.id ?? worker.name} onClick={() => openWorkerProfile(worker)}>
+          <div className="worker-card-top">
+            <span className="trade-pill">{worker.trade}</span>
+            <span className={worker.verified ? 'verified-badge compact' : 'rating'}>
+              {worker.verified ? 'Ellenőrzött' : worker.rating === 'Új' ? 'Új' : `★ ${worker.rating}`}
+            </span>
+          </div>
+          <div className="worker-card-title">
+            <div className="worker-card-avatar" aria-hidden="true">
+              {worker.profileImageUrl ? (
+                <img src={worker.profileImageUrl} alt="" />
+              ) : (
+                <span>{worker.name.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            <h3>{worker.name}</h3>
+          </div>
+          {activeWorkerBadges(worker).length > 0 && (
+            <div className="worker-card-badges">
+              {activeWorkerBadges(worker).slice(0, 3).map((badge) => (
+                <span className="worker-badge compact" key={badge.key}>{badge.label}</span>
+              ))}
+            </div>
+          )}
+          <p>{worker.description}</p>
+          <div className="worker-meta">
+            <span>{worker.area}</span>
+            <span>{worker.jobs}</span>
+          </div>
+        </button>
+      )) : (
+        <div className="empty-results">
+          <h3>{emptyTitle}</h3>
+          <p>{emptyDescription}</p>
+        </div>
+      )}
+    </div>
+  )
 
   if (selectedProblem) {
     const isOwnProblem = Boolean(
@@ -2249,6 +2318,90 @@ function App() {
     )
   }
 
+  if (isWorkerSearchPage) {
+    return (
+      <main className="page-shell">
+        <header className="site-header">
+          <button className="brand brand-button" type="button" onClick={closeWorkerSearchPage}>
+            <span className="brand-mark">M</span>
+            <span>Melos Market</span>
+          </button>
+
+          <button className="header-action" type="button" onClick={closeWorkerSearchPage}>
+            Vissza a főoldalra
+          </button>
+        </header>
+
+        <section className="section-block workers-search-page">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Szakemberek keresése</p>
+              <h1>Találd meg a hozzád illő szakembert.</h1>
+            </div>
+          </div>
+
+          <form className="search-panel workers-search-panel" aria-label="Szakemberek keresése" onSubmit={submitWorkerSearch}>
+            <div className="field">
+              <label htmlFor="workers-page-location">Melyik városban keresel?</label>
+              <input
+                id="workers-page-location"
+                name="location"
+                placeholder="Budapest, Debrecen, Szeged"
+                value={workerSearch.serviceArea}
+                onChange={(event) =>
+                  setWorkerSearch((current) => ({
+                    ...current,
+                    serviceArea: event.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="workers-page-trade">Milyen szakemberre van szükség?</label>
+              <select
+                id="workers-page-trade"
+                name="trade"
+                value={workerSearch.trade}
+                onChange={(event) =>
+                  setWorkerSearch((current) => ({
+                    ...current,
+                    trade: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Minden szakma</option>
+                {trades.map((trade) => (
+                  <option key={trade}>{trade}</option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="button primary" disabled={workerSearchStatus === 'loading'}>
+              {workerSearchStatus === 'loading' ? 'Keresés...' : 'Keresés'}
+            </button>
+            <button type="button" className="button ghost" onClick={clearWorkerSearch}>
+              Szűrők törlése
+            </button>
+          </form>
+
+          {workerSearchMessage && (
+            <p
+              className={`form-message ${workerSearchStatus === 'error' ? 'error' : 'success'}`}
+              role="status"
+            >
+              {workerSearchMessage}
+            </p>
+          )}
+
+          {renderWorkerGrid(
+            workerCards,
+            'Nincs találat',
+            'Próbálj másik várost vagy szakmát választani, vagy töröld a szűrőket.',
+          )}
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="page-shell">
       <header className="site-header">
@@ -2258,7 +2411,15 @@ function App() {
         </a>
 
         <nav className="nav-links" aria-label="Fő navigáció">
-          <a href="#workers">Szakemberek keresése</a>
+          <a
+            href="/szakemberek"
+            onClick={(event) => {
+              event.preventDefault()
+              openWorkerSearchPage()
+            }}
+          >
+            Szakemberek keresése
+          </a>
           <a href="#problem">Probléma feltöltése</a>
           <a href="#jobs">Nyitott munkák</a>
           {isAdmin && <a href="#admin">Admin</a>}
@@ -2395,7 +2556,14 @@ function App() {
           </p>
 
           <div className="hero-actions" aria-label="Elsődleges műveletek">
-            <a className="button primary" href="#workers">
+            <a
+              className="button primary"
+              href="/szakemberek"
+              onClick={(event) => {
+                event.preventDefault()
+                openWorkerSearchPage()
+              }}
+            >
               Szakember keresése
             </a>
             <a className="button secondary" href="#problem">
@@ -2721,48 +2889,22 @@ function App() {
             <p className="section-kicker">Kiemelt szakemberek</p>
             <h2>Böngéssz helyi, megbízható szakemberek között.</h2>
           </div>
-          <a href="#worker-signup">Vállalkozás regisztrálása</a>
+          <a
+            href="/szakemberek"
+            onClick={(event) => {
+              event.preventDefault()
+              openWorkerSearchPage()
+            }}
+          >
+            Összes szakember
+          </a>
         </div>
 
-        <div className="worker-grid">
-          {workerCards.length > 0 ? workerCards.map((worker) => (
-            <button className="worker-card worker-card-button" key={worker.id ?? worker.name} onClick={() => openWorkerProfile(worker)}>
-              <div className="worker-card-top">
-                <span className="trade-pill">{worker.trade}</span>
-                <span className={worker.verified ? 'verified-badge compact' : 'rating'}>
-                  {worker.verified ? 'Ellenőrzött' : worker.rating === 'Új' ? 'Új' : `★ ${worker.rating}`}
-                </span>
-              </div>
-              <div className="worker-card-title">
-                <div className="worker-card-avatar" aria-hidden="true">
-                  {worker.profileImageUrl ? (
-                    <img src={worker.profileImageUrl} alt="" />
-                  ) : (
-                    <span>{worker.name.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <h3>{worker.name}</h3>
-              </div>
-              {activeWorkerBadges(worker).length > 0 && (
-                <div className="worker-card-badges">
-                  {activeWorkerBadges(worker).slice(0, 3).map((badge) => (
-                    <span className="worker-badge compact" key={badge.key}>{badge.label}</span>
-                  ))}
-                </div>
-              )}
-              <p>{worker.description}</p>
-              <div className="worker-meta">
-                <span>{worker.area}</span>
-                <span>{worker.jobs}</span>
-              </div>
-            </button>
-          )) : (
-            <div className="empty-results">
-              <h3>Nincs találat</h3>
-              <p>Próbálj másik várost vagy szakmát választani, vagy töröld a szűrőket.</p>
-            </div>
-          )}
-        </div>
+        {renderWorkerGrid(
+          highlightedWorkers,
+          'Még nincs kiemelt szakember',
+          'Az admin felületen Top szakember jelöléssel lehet szakembert kiemelni a főoldalra.',
+        )}
       </section>
 
       <section className="section-block jobs-section" id="jobs">

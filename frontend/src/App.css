@@ -278,6 +278,19 @@ button.header-action {
   padding: 24px;
 }
 
+.workers-search-page h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1;
+}
+
+.workers-search-panel {
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) auto auto;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -1420,6 +1433,7 @@ textarea:focus {
   .admin-grid,
   .worker-grid,
   .worker-signup,
+  .workers-search-panel,
   .profile-hero,
   .profile-grid,
   .reference-grid {
