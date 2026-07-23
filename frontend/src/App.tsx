@@ -448,6 +448,7 @@ function App() {
     password: '',
   })
   const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [loginState, setLoginState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [loginMessage, setLoginMessage] = useState('')
   const [verificationModalOpen, setVerificationModalOpen] = useState(false)
@@ -659,6 +660,7 @@ function App() {
     setAuthToken('')
     setCurrentUser(null)
     setIsLoginOpen(false)
+    setIsMobileMenuOpen(false)
     setLoginMessage('')
     setVerificationModalOpen(false)
     setVerificationMessage('')
@@ -668,6 +670,10 @@ function App() {
     setCustomerProblemsState('idle')
     setAdminMessage('')
     setAdminState('idle')
+  }
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
   }
 
   const loadWorkers = async (search = workerSearch, useFallbackWhenEmpty = false) => {
@@ -2704,107 +2710,133 @@ function App() {
           <span>Melos Market</span>
         </a>
 
-        <nav className="nav-links" aria-label="Fő navigáció">
-          <a
-            href="/szakemberek"
-            onClick={(event) => {
-              event.preventDefault()
-              openWorkerSearchPage()
-            }}
-          >
-            Szakemberek keresése
-          </a>
-          <a href="#problem">Probléma feltöltése</a>
-          <a
-            href="/munkak"
-            onClick={(event) => {
-              event.preventDefault()
-              openProblemSearchPage()
-            }}
-          >
-            Nyitott munkák
-          </a>
-          {isAdmin && <a href="#admin">Admin</a>}
-        </nav>
+        <button
+          className="mobile-menu-toggle"
+          type="button"
+          aria-label={isMobileMenuOpen ? 'Menü bezárása' : 'Menü megnyitása'}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="main-navigation"
+          onClick={() => {
+            setIsMobileMenuOpen((open) => !open)
+            setIsLoginOpen(false)
+          }}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
 
-        <div className="header-actions">
-          {currentUser ? (
-            <>
-              <span className="account-pill">{currentUser.email}</span>
-              {isAdmin && (
-                <a className="header-action" href="#admin">
-                  Admin
-                </a>
-              )}
-              <button className="header-action" type="button" onClick={logout}>
-                Kilépés
-              </button>
-            </>
-          ) : (
-            <>
-              <a className="header-action" href="#problem">
-                Regisztráció ügyfélként
+        <div id="main-navigation" className={`header-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+          <nav className="nav-links" aria-label="Fő navigáció">
+            <a
+              href="/szakemberek"
+              onClick={(event) => {
+                event.preventDefault()
+                closeMobileMenu()
+                openWorkerSearchPage()
+              }}
+            >
+              Szakemberek keresése
+            </a>
+            <a href="#problem" onClick={closeMobileMenu}>
+              Probléma feltöltése
+            </a>
+            <a
+              href="/munkak"
+              onClick={(event) => {
+                event.preventDefault()
+                closeMobileMenu()
+                openProblemSearchPage()
+              }}
+            >
+              Nyitott munkák
+            </a>
+            {isAdmin && (
+              <a href="#admin" onClick={closeMobileMenu}>
+                Admin
               </a>
-              <a className="header-action" href="#worker-signup">
-                Regisztráció szakemberként
-              </a>
-              <div className="login-popover-wrap">
-                <button
-                  className="header-action"
-                  type="button"
-                  aria-expanded={isLoginOpen}
-                  onClick={() => {
-                    setIsLoginOpen((open) => !open)
-                    setLoginMessage('')
-                    setLoginState('idle')
-                  }}
-                >
-                  Belépés
-                </button>
+            )}
+          </nav>
 
-                {isLoginOpen && (
-                  <form className="login-popover" onSubmit={submitLogin}>
-                    <div className="admin-row-copy">
-                      <h3>Belépés</h3>
-                      <p>Ügyfélként a problémáidat, szakemberként a profilodat kezeled.</p>
-                    </div>
-                    <div className="field">
-                      <label htmlFor="login-email">Email</label>
-                      <input
-                        id="login-email"
-                        type="email"
-                        maxLength={255}
-                        placeholder="peter@example.hu"
-                        required
-                        value={loginForm.email}
-                        onChange={(event) => setLoginForm((current) => ({ ...current, email: event.target.value }))}
-                      />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="login-password">Jelszó</label>
-                      <input
-                        id="login-password"
-                        type="password"
-                        minLength={8}
-                        maxLength={200}
-                        required
-                        value={loginForm.password}
-                        onChange={(event) => setLoginForm((current) => ({ ...current, password: event.target.value }))}
-                      />
-                    </div>
-                    <button type="submit" className="button primary full-width" disabled={loginState === 'submitting'}>
-                      {loginState === 'submitting' ? 'Belépés...' : 'Belépés'}
-                    </button>
-                    {loginMessage && (
-                      <p className={`form-message ${loginState === 'success' ? 'success' : 'error'}`} role="status">
-                        {loginMessage}
-                      </p>
-                    )}
-                  </form>
+          <div className="header-actions">
+            {currentUser ? (
+              <>
+                <span className="account-pill">{currentUser.email}</span>
+                {isAdmin && (
+                  <a className="header-action" href="#admin" onClick={closeMobileMenu}>
+                    Admin
+                  </a>
                 )}
-              </div>
-            </>
-          )}
+                <button className="header-action" type="button" onClick={logout}>
+                  Kilépés
+                </button>
+              </>
+            ) : (
+              <>
+                <a className="header-action" href="#problem" onClick={closeMobileMenu}>
+                  Regisztráció ügyfélként
+                </a>
+                <a className="header-action" href="#worker-signup" onClick={closeMobileMenu}>
+                  Regisztráció szakemberként
+                </a>
+                <div className="login-popover-wrap">
+                  <button
+                    className="header-action"
+                    type="button"
+                    aria-expanded={isLoginOpen}
+                    onClick={() => {
+                      setIsLoginOpen((open) => !open)
+                      setLoginMessage('')
+                      setLoginState('idle')
+                    }}
+                  >
+                    Belépés
+                  </button>
+
+                  {isLoginOpen && (
+                    <form className="login-popover" onSubmit={submitLogin}>
+                      <div className="admin-row-copy">
+                        <h3>Belépés</h3>
+                        <p>Ügyfélként a problémáidat, szakemberként a profilodat kezeled.</p>
+                      </div>
+                      <div className="field">
+                        <label htmlFor="login-email">Email</label>
+                        <input
+                          id="login-email"
+                          type="email"
+                          maxLength={255}
+                          placeholder="peter@example.hu"
+                          required
+                          value={loginForm.email}
+                          onChange={(event) => setLoginForm((current) => ({ ...current, email: event.target.value }))}
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="login-password">Jelszó</label>
+                        <input
+                          id="login-password"
+                          type="password"
+                          minLength={8}
+                          maxLength={200}
+                          required
+                          value={loginForm.password}
+                          onChange={(event) => setLoginForm((current) => ({ ...current, password: event.target.value }))}
+                        />
+                      </div>
+                      <button type="submit" className="button primary full-width" disabled={loginState === 'submitting'}>
+                        {loginState === 'submitting' ? 'Belépés...' : 'Belépés'}
+                      </button>
+                      {loginMessage && (
+                        <p className={`form-message ${loginState === 'success' ? 'success' : 'error'}`} role="status">
+                          {loginMessage}
+                        </p>
+                      )}
+                    </form>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 

@@ -41,6 +41,36 @@
   position: relative;
 }
 
+.header-menu {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.mobile-menu-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--text-strong);
+}
+
 .brand,
 .nav-links,
 .hero-actions,
@@ -1440,17 +1470,93 @@ textarea:focus {
     padding-top: 14px;
   }
 
-  .site-header,
   .section-heading,
   .worker-signup {
     align-items: flex-start;
     flex-direction: column;
   }
 
+  .site-header {
+    position: relative;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 18px;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .header-menu {
+    display: none;
+    width: 100%;
+    flex: none;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 18px 44px rgba(22, 47, 37, 0.1);
+  }
+
+  .header-menu.open {
+    display: flex;
+  }
+
   .nav-links {
     width: 100%;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .nav-links a,
+  .header-action {
+    display: block;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    text-align: left;
+  }
+
+  .nav-links a {
+    border: 1px solid transparent;
+  }
+
+  .nav-links a:hover,
+  .nav-links a:focus-visible {
+    border-color: var(--border);
+    background: rgba(18, 122, 93, 0.08);
+  }
+
+  .header-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .account-pill {
+    max-width: none;
+    width: 100%;
+  }
+
+  .login-popover-wrap {
+    width: 100%;
+  }
+
+  .login-popover {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
+  }
+
+  .login-popover::before {
+    display: none;
   }
 
   .hero-section,
