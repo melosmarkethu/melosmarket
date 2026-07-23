@@ -84,6 +84,13 @@ public class ProblemService {
     }
 
     @Transactional
+    public void deleteMyProblem(long problemId) {
+        CustomerEntity customer = requireCustomerProfile();
+        ProblemEntity problem = getOwnedProblem(problemId, customer);
+        problemRepository.delete(problem);
+    }
+
+    @Transactional
     public ProblemImage uploadProblemPhoto(long problemId, String title, MultipartFile image) {
         CustomerEntity customer = requireCustomerProfile();
         if (image == null || image.isEmpty()) {

@@ -611,6 +611,16 @@ function App() {
     Authorization: `Bearer ${authToken}`,
   })
 
+  const requireVerifiedEmail = () => {
+    if (!currentUser || currentUser.emailVerified) {
+      return true
+    }
+    setVerificationModalOpen(true)
+    setVerificationState('idle')
+    setVerificationMessage('A művelethez először erősítsd meg az email címedet.')
+    return false
+  }
+
   const isCustomer = currentUser?.role === 'CUSTOMER'
   const isWorker = currentUser?.role === 'WORKER'
   const isAdmin = currentUser?.role === 'ADMIN'
@@ -680,24 +690,28 @@ function App() {
     return mappedWorkers
   }
 
-  const loadProblems = async (useFallbackWhenEmpty = true, search = problemSearch) => {
-    const params = new URLSearchParams()
-    if (search.trade) {
-      params.set('trade', tradeApiValues[search.trade])
-    }
-    if (search.location.trim()) {
-      params.set('location', search.location.trim())
-    }
+  const filterProblems = (problems: ProblemPost[], search = problemSearch) => {
+    const normalizedLocation = search.location.trim().toLowerCase()
+    return problems.filter((problem) => {
+      const matchesTrade = !search.trade || problem.trade === search.trade
+      const matchesLocation =
+        !normalizedLocation || problem.location.toLowerCase().includes(normalizedLocation)
+      return matchesTrade && matchesLocation
+    })
+  }
 
-    const query = params.toString()
-    const response = await fetch(`${apiBaseUrl}/problems${query ? `?${query}` : ''}`)
+  const loadProblems = async (useFallbackWhenEmpty = true, search = problemSearch) => {
+    const hasFilters = Boolean(search.trade || search.location.trim())
+    const response = await fetch(`${apiBaseUrl}/problems`)
     if (!response.ok) {
       throw new Error(`Problem search failed with status ${response.status}`)
     }
     const problemsFromApi = await response.json()
     const mappedProblems = problemsFromApi.map(problemFromApi)
-    setProblemPosts(mappedProblems.length > 0 || !useFallbackWhenEmpty ? mappedProblems : initialProblems)
-    return mappedProblems
+    const sourceProblems = mappedProblems.length > 0 || !useFallbackWhenEmpty ? mappedProblems : initialProblems
+    const filteredProblems = hasFilters ? filterProblems(sourceProblems, search) : sourceProblems
+    setProblemPosts(filteredProblems)
+    return filteredProblems
   }
 
   const loadAdminData = async (token = authToken) => {
@@ -865,6 +879,10 @@ function App() {
     if (files.length === 0 || !selectedWorker || !authToken) {
       return
     }
+    if (!requireVerifiedEmail()) {
+      event.target.value = ''
+      return
+    }
 
     try {
       const uploadedWorks = await Promise.all(
@@ -913,6 +931,10 @@ function App() {
     if (!file || !selectedWorker || !authToken) {
       return
     }
+    if (!requireVerifiedEmail()) {
+      event.target.value = ''
+      return
+    }
 
     try {
       const formData = new FormData()
@@ -944,6 +966,9 @@ function App() {
 
   const deleteReferenceWork = async (work: ReferenceWork) => {
     if (!selectedWorker || !authToken) {
+      return
+    }
+    if (!requireVerifiedEmail()) {
       return
     }
 
@@ -982,6 +1007,9 @@ function App() {
   const submitWorkerReview = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!selectedWorker?.id) {
+      return
+    }
+    if (!requireVerifiedEmail()) {
       return
     }
 
@@ -1443,6 +1471,9 @@ function App() {
 
   const submitProfileEdit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!requireVerifiedEmail()) {
+      return
+    }
     setProfileEditState('submitting')
     setProfileEditMessage('')
 
@@ -1583,6 +1614,10 @@ function App() {
       setSubmitMessage('Probléma feltöltéséhez először ügyfélként kell regisztrálnod vagy belépned.')
       return
     }
+    if (!requireVerifiedEmail()) {
+      setSubmitState('idle')
+      return
+    }
 
     try {
       const response = await fetch(`${apiBaseUrl}/problems`, {
@@ -1655,6 +1690,9 @@ function App() {
     if (!selectedProblem?.id) {
       return
     }
+    if (!requireVerifiedEmail()) {
+      return
+    }
 
     setProblemEditState('submitting')
     setProblemEditMessage('')
@@ -1692,6 +1730,9 @@ function App() {
 
   const uploadProblemEditPhotos = async () => {
     if (!selectedProblem?.id || problemEditPhotoFiles.length === 0) {
+      return
+    }
+    if (!requireVerifiedEmail()) {
       return
     }
 
@@ -1737,6 +1778,9 @@ function App() {
     if (!selectedProblem?.id) {
       return
     }
+    if (!requireVerifiedEmail()) {
+      return
+    }
     const confirmed = window.confirm(`Biztosan törlöd ezt a képet: ${image.title}?`)
     if (!confirmed) {
       return
@@ -1765,6 +1809,42 @@ function App() {
     } catch {
       setProblemEditState('error')
       setProblemEditMessage('Nem sikerült törölni a képet.')
+    }
+  }
+
+  const deleteMyProblem = async () => {
+    if (!selectedProblem?.id) {
+      return
+    }
+    if (!requireVerifiedEmail()) {
+      return
+    }
+
+    const confirmed = window.confirm(`Biztosan törlöd ezt a problémát: ${selectedProblem.title}?`)
+    if (!confirmed) {
+      return
+    }
+
+    setProblemEditState('submitting')
+    setProblemEditMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/problems/${selectedProblem.id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Problem delete failed with status ${response.status}`)
+      }
+
+      setProblemPosts((current) => current.filter((problem) => problem.id !== selectedProblem.id))
+      setCustomerProblems((current) => current.filter((problem) => problem.id !== selectedProblem.id))
+      setSelectedProblem(null)
+      window.history.pushState(null, '', '/')
+    } catch {
+      setProblemEditState('error')
+      setProblemEditMessage('Nem sikerült törölni a problémát.')
     }
   }
 
@@ -1991,6 +2071,14 @@ function App() {
                 {problemEditPhotoFiles.length > 0
                   ? `${problemEditPhotoFiles.length} kép feltöltése`
                   : 'Válassz képeket'}
+              </button>
+              <button
+                type="button"
+                className="button danger"
+                disabled={problemEditState === 'submitting'}
+                onClick={deleteMyProblem}
+              >
+                Probléma törlése
               </button>
               {problemEditMessage && (
                 <p className={`form-message ${problemEditState === 'success' ? 'success' : 'error'}`} role="status">
@@ -2723,6 +2811,14 @@ function App() {
       {verificationModalOpen && (
         <div className="modal-backdrop" role="presentation">
           <section className="verification-modal" role="dialog" aria-modal="true" aria-labelledby="email-verification-title">
+            <button
+              className="modal-close-button"
+              type="button"
+              aria-label="Email megerősítés ablak bezárása"
+              onClick={() => setVerificationModalOpen(false)}
+            >
+              X
+            </button>
             <p className="section-kicker">Email megerősítés</p>
             <h2 id="email-verification-title">Erősítsd meg az email címedet</h2>
             <p>

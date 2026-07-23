@@ -506,12 +506,38 @@ textarea:focus {
 }
 
 .verification-modal {
+  position: relative;
   width: min(100%, 520px);
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
   padding: 28px;
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-strong);
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.modal-close-button:hover,
+.modal-close-button:focus-visible {
+  color: var(--brand);
+  border-color: var(--brand);
+  outline: 0;
 }
 
 .verification-modal h2 {

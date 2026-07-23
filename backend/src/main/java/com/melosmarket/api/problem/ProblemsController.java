@@ -41,6 +41,12 @@ public class ProblemsController implements ProblemsApi {
     }
 
     @Override
+    public ResponseEntity<Void> deleteMyProblem(Long problemId) {
+        problemService.deleteMyProblem(problemId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
     public ResponseEntity<List<Problem>> getMyProblems() {
         return ResponseEntity.ok(problemService.getMyProblems());
     }
