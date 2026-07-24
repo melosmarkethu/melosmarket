@@ -2757,6 +2757,7 @@ function App() {
               </a>
             )}
           </nav>
+        </div>
 
           <div className="header-actions">
             {currentUser ? (
@@ -2837,7 +2838,6 @@ function App() {
               </>
             )}
           </div>
-        </div>
       </header>
 
       {verificationModalOpen && (
