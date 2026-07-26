@@ -625,6 +625,9 @@ function App() {
   const isCustomer = currentUser?.role === 'CUSTOMER'
   const isWorker = currentUser?.role === 'WORKER'
   const isAdmin = currentUser?.role === 'ADMIN'
+  const loggedInWorker = currentUser?.workerId
+    ? workerCards.find((worker) => worker.id === currentUser.workerId)
+    : undefined
   const currentCustomerProblems = customerProblems.slice(0, 5)
   const recentCustomerProblems = customerProblems.slice(0, 3)
   const highlightedWorkers = workerCards.filter((worker) => worker.topWorker)
@@ -2706,8 +2709,7 @@ function App() {
     <main className="page-shell">
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Melos Market főoldal">
-          <span className="brand-mark">M</span>
-          <span>Melos Market</span>
+          <img className="brand-logo" src="/melosmarket-logo.png" alt="Melos Market" />
         </a>
 
         <button
@@ -2762,7 +2764,20 @@ function App() {
           <div className="header-actions">
             {currentUser ? (
               <>
-                <span className="account-pill">{currentUser.email}</span>
+                {isWorker && loggedInWorker ? (
+                  <button
+                    className="account-pill account-pill-button"
+                    type="button"
+                    onClick={() => {
+                      closeMobileMenu()
+                      openWorkerProfile(loggedInWorker)
+                    }}
+                  >
+                    {loggedInWorker.name}
+                  </button>
+                ) : (
+                  <span className="account-pill">{currentUser.email}</span>
+                )}
                 {isAdmin && (
                   <a className="header-action" href="#admin" onClick={closeMobileMenu}>
                     Admin

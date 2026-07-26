@@ -89,6 +89,17 @@
   text-decoration: none;
 }
 
+.brand-logo {
+  display: block;
+  width: min(250px, 30vw);
+  height: auto;
+  padding: 6px 10px;
+  border: 1px solid rgba(18, 122, 93, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(22, 47, 37, 0.07);
+}
+
 .brand-button {
   border: 0;
   padding: 0;
@@ -144,13 +155,25 @@ button.header-action {
   max-width: 220px;
   overflow: hidden;
   padding: 9px 12px;
+  border: 0;
   border-radius: 8px;
   color: var(--text-strong);
   background: rgba(18, 122, 93, 0.1);
+  font: inherit;
   font-size: 0.88rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account-pill-button {
+  cursor: pointer;
+}
+
+.account-pill-button:hover,
+.account-pill-button:focus-visible {
+  color: var(--brand);
+  background: rgba(18, 122, 93, 0.16);
 }
 
 .login-popover-wrap {
@@ -1481,6 +1504,11 @@ textarea:focus {
     flex-wrap: wrap;
     gap: 12px;
     padding-bottom: 18px;
+  }
+
+  .brand-logo {
+    width: min(210px, 58vw);
+    padding: 5px 8px;
   }
 
   .mobile-menu-toggle {
