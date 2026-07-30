@@ -47,6 +47,9 @@ public class ProblemEntity {
     @Column(length = 180)
     private String location;
 
+    @Column(length = 80)
+    private String county;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
     private ProblemStatusEntity status = ProblemStatusEntity.OPEN;
@@ -118,6 +121,14 @@ public class ProblemEntity {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public String getCounty() {
+        return county;
+    }
+
+    public void setCounty(String county) {
+        this.county = county;
     }
 
     public ProblemStatusEntity getStatus() {

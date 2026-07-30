@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import com.melosmarket.api.generated.model.CreateWorkerRequest;
+import com.melosmarket.api.generated.model.County;
 import com.melosmarket.api.generated.model.RegisterWorkerRequest;
 import com.melosmarket.api.generated.model.Trade;
 import com.melosmarket.api.generated.model.Worker;
@@ -32,6 +33,7 @@ class WorkerMapper {
         entity.setTaxNumber(blankToNull(request.getTaxNumber()));
         entity.setTrade(toEntityTrade(request.getTrade()));
         entity.setServiceArea(blankToNull(request.getServiceArea()));
+        entity.setCounty(toEntityCounty(request.getCounty()));
         entity.setDescription(blankToNull(request.getDescription()));
         return entity;
     }
@@ -45,6 +47,7 @@ class WorkerMapper {
         entity.setTaxNumber(blankToNull(request.getTaxNumber()));
         entity.setTrade(toEntityTrade(request.getTrade()));
         entity.setServiceArea(blankToNull(request.getServiceArea()));
+        entity.setCounty(toEntityCounty(request.getCounty()));
         entity.setDescription(blankToNull(request.getDescription()));
         return entity;
     }
@@ -72,6 +75,7 @@ class WorkerMapper {
                 .accessStatus(toApiAccessStatus(entity))
                 .trialDaysRemaining(trialDaysRemaining(entity.getTrialEndsAt()))
                 .serviceArea(entity.getServiceArea())
+                .county(toApiCounty(entity.getCounty()))
                 .description(entity.getDescription())
                 .referenceImages(entity.getReferenceImages().stream()
                         .map(this::toApiReferenceImage)
@@ -85,6 +89,10 @@ class WorkerMapper {
         return trade == null ? null : WorkerTradeType.valueOf(trade.name());
     }
 
+    String toEntityCounty(County county) {
+        return county == null ? null : county.getValue();
+    }
+
     WorkerAvailabilityState toEntityAvailabilityStatus(WorkerAvailabilityStatus availabilityStatus) {
         return availabilityStatus == null
                 ? WorkerAvailabilityState.AVAILABLE
@@ -93,6 +101,10 @@ class WorkerMapper {
 
     private Trade toApiTrade(WorkerTradeType trade) {
         return Trade.valueOf(trade.name());
+    }
+
+    private County toApiCounty(String county) {
+        return county == null ? null : County.fromValue(county);
     }
 
     private WorkerAvailabilityStatus toApiAvailabilityStatus(WorkerAvailabilityState availabilityStatus) {

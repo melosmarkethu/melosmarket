@@ -6,6 +6,7 @@ type ProblemFormState = {
   title: string
   description: string
   trade: string
+  county: string
   location: string
   phone: string
 }
@@ -16,6 +17,7 @@ type ProblemPost = {
   title: string
   description: string
   trade: string
+  county: string
   location: string
   phone?: string
   posted: string
@@ -35,6 +37,7 @@ type ProblemApiResponse = {
   description: string
   status?: string
   trade?: string
+  county?: string
   location?: string
   phone?: string
   createdAt?: string
@@ -56,6 +59,7 @@ type WorkerCard = {
   taxNumber?: string
   profileImageUrl?: string
   trade: string
+  county: string
   area: string
   rating: string
   jobs: string
@@ -107,6 +111,7 @@ type WorkerFormState = {
   phone: string
   taxNumber: string
   trade: string
+  county: string
   serviceArea: string
   description: string
 }
@@ -120,6 +125,7 @@ type WorkerApiResponse = {
   taxNumber?: string
   profileImageUrl?: string
   trade: string
+  county?: string
   verified?: boolean
   topWorker?: boolean
   manyReferences?: boolean
@@ -178,6 +184,7 @@ type WorkerProfileEditState = {
   phone: string
   taxNumber: string
   trade: string
+  county: string
   serviceArea: string
   description: string
   availabilityStatus: WorkerAvailabilityStatus
@@ -297,6 +304,37 @@ const trades = [
   'Fuvarozás',
 ]
 
+const counties = [
+  { value: 'BUDAPEST', label: 'Budapest' },
+  { value: 'BACS_KISKUN', label: 'Bács-Kiskun megye' },
+  { value: 'BARANYA', label: 'Baranya megye' },
+  { value: 'BEKES', label: 'Békés megye' },
+  { value: 'BORSOD_ABAUJ_ZEMPLEN', label: 'Borsod-Abaúj-Zemplén megye' },
+  { value: 'CSONGRAD_CSANAD', label: 'Csongrád-Csanád megye' },
+  { value: 'FEJER', label: 'Fejér megye' },
+  { value: 'GYOR_MOSON_SOPRON', label: 'Győr-Moson-Sopron megye' },
+  { value: 'HAJDU_BIHAR', label: 'Hajdú-Bihar megye' },
+  { value: 'HEVES', label: 'Heves megye' },
+  { value: 'JASZ_NAGYKUN_SZOLNOK', label: 'Jász-Nagykun-Szolnok megye' },
+  { value: 'KOMAROM_ESZTERGOM', label: 'Komárom-Esztergom megye' },
+  { value: 'NOGRAD', label: 'Nógrád megye' },
+  { value: 'PEST', label: 'Pest megye' },
+  { value: 'SOMOGY', label: 'Somogy megye' },
+  { value: 'SZABOLCS_SZATMAR_BEREG', label: 'Szabolcs-Szatmár-Bereg megye' },
+  { value: 'TOLNA', label: 'Tolna megye' },
+  { value: 'VAS', label: 'Vas megye' },
+  { value: 'VESZPREM', label: 'Veszprém megye' },
+  { value: 'ZALA', label: 'Zala megye' },
+]
+
+const countyLabelsByApiValue: Record<string, string> = Object.fromEntries(
+  counties.map((county) => [county.value, county.label]),
+)
+
+const countyApiValuesByLabel: Record<string, string> = Object.fromEntries(
+  counties.map((county) => [county.label, county.value]),
+)
+
 const tradeApiValues: Record<string, string> = {
   Generálkivitelezés: 'GENERAL_CONTRACTING',
   Kőműves: 'MASON',
@@ -334,6 +372,7 @@ const initialWorkers: WorkerCard[] = [
   {
     name: 'Gyors Csőszerviz',
     trade: 'Víz-, gáz- és fűtésszerelő',
+    county: 'Budapest',
     area: 'Budapest és környéke',
     rating: '4.9',
     jobs: '128 munka',
@@ -355,6 +394,7 @@ const initialWorkers: WorkerCard[] = [
   {
     name: 'Stabil Otthon Építők',
     trade: 'Generálkivitelezés',
+    county: 'Pest megye',
     area: 'Pest megye',
     rating: '4.8',
     jobs: '84 munka',
@@ -376,6 +416,7 @@ const initialWorkers: WorkerCard[] = [
   {
     name: 'Biztos Kamera',
     trade: 'Kamerarendszer-szerelő',
+    county: 'Budapest',
     area: 'Budapest nyugati része',
     rating: '4.7',
     jobs: '96 munka',
@@ -414,6 +455,7 @@ const initialProblems: ProblemPost[] = [
     title: 'Szivárog a konyhai mosogató a szekrény alatt',
     description: 'A mosogató alatti csőnél víz jelenik meg használat közben, valószínűleg tömítés vagy csőcsatlakozás hibája.',
     trade: 'Víz-, gáz- és fűtésszerelő',
+    county: 'Budapest',
     location: 'Újlipótváros',
     posted: '12 perce',
     images: [],
@@ -422,6 +464,7 @@ const initialProblems: ProblemPost[] = [
     title: 'Két beltéri fal festésére van szükség',
     description: 'Két közepes méretű beltéri fal tisztasági festéséhez keresünk szakembert.',
     trade: 'Festő–mázoló–tapétázó',
+    county: 'Budapest',
     location: 'Terézváros',
     posted: '34 perce',
     images: [],
@@ -430,6 +473,7 @@ const initialProblems: ProblemPost[] = [
     title: 'Törött kerítésszakasz cseréje a kertben',
     description: 'A kert egyik kerítésszakasza megsérült, javításra vagy részleges cserére lenne szükség.',
     trade: 'Ács–tetőfedő',
+    county: 'Pest megye',
     location: 'Budaörs',
     posted: '1 órája',
     images: [],
@@ -466,6 +510,7 @@ function App() {
     phone: '',
     taxNumber: '',
     trade: '',
+    county: '',
     serviceArea: '',
     description: '',
     availabilityStatus: 'AVAILABLE',
@@ -475,7 +520,7 @@ function App() {
   const [profileEditMessage, setProfileEditMessage] = useState('')
   const [workerSearch, setWorkerSearch] = useState({
     trade: '',
-    serviceArea: '',
+    county: '',
   })
   const [workerCards, setWorkerCards] = useState<WorkerCard[]>(initialWorkers)
   const [workerSearchStatus, setWorkerSearchStatus] = useState<'idle' | 'loading' | 'error'>('idle')
@@ -488,6 +533,7 @@ function App() {
     phone: '',
     taxNumber: '',
     trade: '',
+    county: '',
     serviceArea: '',
     description: '',
   })
@@ -503,12 +549,13 @@ function App() {
     title: '',
     description: '',
     trade: '',
+    county: '',
     location: '',
     phone: '',
   })
   const [problemSearch, setProblemSearch] = useState({
     trade: '',
-    location: '',
+    county: '',
   })
   const [problemSearchStatus, setProblemSearchStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [problemSearchMessage, setProblemSearchMessage] = useState('')
@@ -516,6 +563,7 @@ function App() {
     title: '',
     description: '',
     trade: '',
+    county: '',
     location: '',
     phone: '',
   })
@@ -540,6 +588,7 @@ function App() {
     taxNumber: worker.taxNumber,
     profileImageUrl: resolveApiImageUrl(worker.profileImageUrl),
     trade: tradeLabelsByApiValue[worker.trade] ?? worker.trade,
+    county: worker.county ? countyLabelsByApiValue[worker.county] ?? worker.county : 'Nincs megadva',
     area: worker.serviceArea ?? 'Nincs megadva',
     rating: 'Új',
     jobs: '0 munka',
@@ -583,6 +632,7 @@ function App() {
     title: problem.title,
     description: problem.description,
     trade: problem.trade ? tradeLabelsByApiValue[problem.trade] ?? problem.trade : 'Nincs megadva',
+    county: problem.county ? countyLabelsByApiValue[problem.county] ?? problem.county : 'Nincs megadva',
     location: problem.location ?? 'Nincs megadva',
     phone: problem.phone,
     posted: problem.createdAt ? new Date(problem.createdAt).toLocaleDateString('hu-HU') : 'adatbázisból',
@@ -684,8 +734,8 @@ function App() {
     if (search.trade) {
       params.set('trade', tradeApiValues[search.trade])
     }
-    if (search.serviceArea.trim()) {
-      params.set('serviceArea', search.serviceArea.trim())
+    if (search.county) {
+      params.set('county', search.county)
     }
 
     const query = params.toString()
@@ -700,18 +750,25 @@ function App() {
   }
 
   const filterProblems = (problems: ProblemPost[], search = problemSearch) => {
-    const normalizedLocation = search.location.trim().toLowerCase()
     return problems.filter((problem) => {
       const matchesTrade = !search.trade || problem.trade === search.trade
-      const matchesLocation =
-        !normalizedLocation || problem.location.toLowerCase().includes(normalizedLocation)
-      return matchesTrade && matchesLocation
+      const matchesCounty = !search.county || problem.county === countyLabelsByApiValue[search.county]
+      return matchesTrade && matchesCounty
     })
   }
 
   const loadProblems = async (useFallbackWhenEmpty = true, search = problemSearch) => {
-    const hasFilters = Boolean(search.trade || search.location.trim())
-    const response = await fetch(`${apiBaseUrl}/problems`)
+    const hasFilters = Boolean(search.trade || search.county)
+    const params = new URLSearchParams()
+    if (search.trade) {
+      params.set('trade', tradeApiValues[search.trade])
+    }
+    if (search.county) {
+      params.set('county', search.county)
+    }
+
+    const query = params.toString()
+    const response = await fetch(`${apiBaseUrl}/problems${query ? `?${query}` : ''}`)
     if (!response.ok) {
       throw new Error(`Problem search failed with status ${response.status}`)
     }
@@ -787,6 +844,7 @@ function App() {
       phone: worker.phone ?? '',
       taxNumber: worker.taxNumber ?? '',
       trade: worker.trade,
+      county: countyApiValuesByLabel[worker.county] ?? '',
       serviceArea: worker.area === 'Nincs megadva' ? '' : worker.area,
       description: worker.description,
       availabilityStatus: worker.availabilityStatus,
@@ -832,6 +890,7 @@ function App() {
       title: problem.title,
       description: problem.description,
       trade: problem.trade === 'Nincs megadva' ? '' : problem.trade,
+      county: countyApiValuesByLabel[problem.county] ?? '',
       location: problem.location === 'Nincs megadva' ? '' : problem.location,
       phone: problem.phone ?? '',
     })
@@ -1287,11 +1346,11 @@ function App() {
     try {
       const results = await loadWorkers(workerSearch)
       openWorkerSearchPage()
-      const hasFilters = Boolean(workerSearch.trade || workerSearch.serviceArea.trim())
+      const hasFilters = Boolean(workerSearch.trade || workerSearch.county)
       if (results.length === 0) {
         setWorkerSearchMessage(
           hasFilters
-            ? 'Nincs találat erre a városra és szakmára. Próbálj meg másik szűrést.'
+            ? 'Nincs találat erre a megyére és szakmára. Próbálj meg másik szűrést.'
             : 'Még nincs regisztrált szakember az adatbázisban.',
         )
       } else {
@@ -1307,7 +1366,7 @@ function App() {
   const clearWorkerSearch = async () => {
     const emptySearch = {
       trade: '',
-      serviceArea: '',
+      county: '',
     }
     setWorkerSearch(emptySearch)
     setWorkerSearchMessage('')
@@ -1331,11 +1390,11 @@ function App() {
     try {
       const results = await loadProblems(false, problemSearch)
       openProblemSearchPage()
-      const hasFilters = Boolean(problemSearch.trade || problemSearch.location.trim())
+      const hasFilters = Boolean(problemSearch.trade || problemSearch.county)
       if (results.length === 0) {
         setProblemSearchMessage(
           hasFilters
-            ? 'Nincs találat erre a városra és munkatípusra. Próbálj meg másik szűrést.'
+            ? 'Nincs találat erre a megyére és munkatípusra. Próbálj meg másik szűrést.'
             : 'Még nincs nyitott probléma az adatbázisban.',
         )
       } else {
@@ -1351,7 +1410,7 @@ function App() {
   const clearProblemSearch = async () => {
     const emptySearch = {
       trade: '',
-      location: '',
+      county: '',
     }
     setProblemSearch(emptySearch)
     setProblemSearchMessage('')
@@ -1499,6 +1558,7 @@ function App() {
           phone: profileEditForm.phone || undefined,
           taxNumber: profileEditForm.taxNumber || undefined,
           trade: tradeApiValues[profileEditForm.trade],
+          county: profileEditForm.county,
           serviceArea: profileEditForm.serviceArea || undefined,
           description: profileEditForm.description || undefined,
           availabilityStatus: profileEditForm.availabilityStatus,
@@ -1543,6 +1603,7 @@ function App() {
           phone: workerForm.phone || undefined,
           taxNumber: workerForm.taxNumber || undefined,
           trade: tradeApiValues[workerForm.trade],
+          county: workerForm.county,
           serviceArea: workerForm.serviceArea || undefined,
           description: workerForm.description || undefined,
         }),
@@ -1572,6 +1633,7 @@ function App() {
         phone: '',
         taxNumber: '',
         trade: '',
+        county: '',
         serviceArea: '',
         description: '',
       })
@@ -1639,6 +1701,7 @@ function App() {
           title: problemForm.title,
           description: problemForm.description,
           trade: tradeApiValues[problemForm.trade],
+          county: problemForm.county,
           location: problemForm.location,
           phone: problemForm.phone || undefined,
         }),
@@ -1672,6 +1735,7 @@ function App() {
       const createdProblemCard = {
         ...problemFromApi(createdProblem),
         trade: problemForm.trade,
+        county: countyLabelsByApiValue[problemForm.county] ?? problemForm.county,
         location: createdProblem.location ?? problemForm.location,
         posted: 'épp most',
         images: uploadedImages,
@@ -1682,6 +1746,7 @@ function App() {
         title: '',
         description: '',
         trade: '',
+        county: '',
         location: '',
         phone: '',
       })
@@ -1717,6 +1782,7 @@ function App() {
           title: problemEditForm.title,
           description: problemEditForm.description,
           trade: problemEditForm.trade ? tradeApiValues[problemEditForm.trade] : undefined,
+          county: problemEditForm.county,
           location: problemEditForm.location || undefined,
           phone: problemEditForm.phone || undefined,
         }),
@@ -1886,6 +1952,7 @@ function App() {
           )}
           <p>{worker.description}</p>
           <div className="worker-meta">
+            <span>{worker.county}</span>
             <span>{worker.area}</span>
             <span>{worker.jobs}</span>
           </div>
@@ -1909,6 +1976,7 @@ function App() {
               <h3>{problem.title}</h3>
             </div>
             <div className="job-meta">
+              <span>{problem.county}</span>
               <span>{problem.location}</span>
               <span>{problem.posted}</span>
             </div>
@@ -1953,6 +2021,7 @@ function App() {
             <p>{selectedProblem.description}</p>
             <div className="profile-tags">
               <span className="trade-pill">{selectedProblem.trade}</span>
+              <span>{selectedProblem.county}</span>
               <span>{selectedProblem.location}</span>
               <span>{selectedProblem.posted}</span>
             </div>
@@ -1973,6 +2042,10 @@ function App() {
               <div>
                 <dt>Szakma</dt>
                 <dd>{selectedProblem.trade}</dd>
+              </div>
+              <div>
+                <dt>Megye</dt>
+                <dd>{selectedProblem.county}</dd>
               </div>
               <div>
                 <dt>Helyszín</dt>
@@ -2033,6 +2106,24 @@ function App() {
                     <option value="">Nincs megadva</option>
                     {trades.map((trade) => (
                       <option key={trade}>{trade}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="problem-edit-county">Megye</label>
+                  <select
+                    id="problem-edit-county"
+                    required
+                    value={problemEditForm.county}
+                    onChange={(event) => updateProblemEditForm('county', event.target.value)}
+                  >
+                    <option value="" disabled>
+                      Válassz megyét
+                    </option>
+                    {counties.map((county) => (
+                      <option key={county.value} value={county.value}>
+                        {county.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -2158,6 +2249,7 @@ function App() {
       !hasIntroduction ? 'írj részletesebb bemutatkozást' : '',
       !selectedWorker.profileImageUrl ? 'tölts fel profilképet' : '',
       !selectedWorker.phone ? 'adj meg telefonszámot' : '',
+      selectedWorker.county === 'Nincs megadva' ? 'válassz megyét' : '',
       selectedWorker.area === 'Nincs megadva' ? 'add meg a szolgáltatási területedet' : '',
     ].filter(Boolean)
     const profileCompletionMessage =
@@ -2208,6 +2300,7 @@ function App() {
                 <span className="worker-badge" key={badge.key}>{badge.label}</span>
               ))}
               <span className="trade-pill">{selectedWorker.trade}</span>
+              <span>{selectedWorker.county}</span>
               <span>{selectedWorker.area}</span>
               <span>{selectedWorker.jobs}</span>
             </div>
@@ -2231,6 +2324,10 @@ function App() {
               <div>
                 <dt>Szakma</dt>
                 <dd>{selectedWorker.trade}</dd>
+              </div>
+              <div>
+                <dt>Megye</dt>
+                <dd>{selectedWorker.county}</dd>
               </div>
               <div>
                 <dt>Terület</dt>
@@ -2363,6 +2460,24 @@ function App() {
                   >
                     {trades.map((trade) => (
                       <option key={trade}>{trade}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="profile-county">Megye</label>
+                  <select
+                    id="profile-county"
+                    required
+                    value={profileEditForm.county}
+                    onChange={(event) => updateProfileEditForm('county', event.target.value)}
+                  >
+                    <option value="" disabled>
+                      Válassz megyét
+                    </option>
+                    {counties.map((county) => (
+                      <option key={county.value} value={county.value}>
+                        {county.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -2554,19 +2669,25 @@ function App() {
 
           <form className="search-panel workers-search-panel" aria-label="Szakemberek keresése" onSubmit={submitWorkerSearch}>
             <div className="field">
-              <label htmlFor="workers-page-location">Melyik városban keresel?</label>
-              <input
-                id="workers-page-location"
-                name="location"
-                placeholder="Budapest, Debrecen, Szeged"
-                value={workerSearch.serviceArea}
+              <label htmlFor="workers-page-county">Melyik megyében keresel?</label>
+              <select
+                id="workers-page-county"
+                name="county"
+                value={workerSearch.county}
                 onChange={(event) =>
                   setWorkerSearch((current) => ({
                     ...current,
-                    serviceArea: event.target.value,
+                    county: event.target.value,
                   }))
                 }
-              />
+              >
+                <option value="">Minden megye</option>
+                {counties.map((county) => (
+                  <option key={county.value} value={county.value}>
+                    {county.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="workers-page-trade">Milyen szakemberre van szükség?</label>
@@ -2638,19 +2759,25 @@ function App() {
 
           <form className="search-panel workers-search-panel" aria-label="Nyitott munkák keresése" onSubmit={submitProblemSearch}>
             <div className="field">
-              <label htmlFor="problems-page-location">Melyik városban keresel munkát?</label>
-              <input
-                id="problems-page-location"
-                name="location"
-                placeholder="Budapest, Debrecen, Szeged"
-                value={problemSearch.location}
+              <label htmlFor="problems-page-county">Melyik megyében keresel munkát?</label>
+              <select
+                id="problems-page-county"
+                name="county"
+                value={problemSearch.county}
                 onChange={(event) =>
                   setProblemSearch((current) => ({
                     ...current,
-                    location: event.target.value,
+                    county: event.target.value,
                   }))
                 }
-              />
+              >
+                <option value="">Minden megye</option>
+                {counties.map((county) => (
+                  <option key={county.value} value={county.value}>
+                    {county.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="problems-page-trade">Milyen típusú munkát keresel?</label>
@@ -2931,19 +3058,25 @@ function App() {
 
         <form className="search-panel" aria-label="Szakemberek keresése" onSubmit={submitWorkerSearch}>
           <div className="field">
-            <label htmlFor="location">Melyik városban keresel?</label>
-            <input
-              id="location"
-              name="location"
-              placeholder="Budapest, Debrecen, Szeged"
-              value={workerSearch.serviceArea}
+            <label htmlFor="county">Melyik megyében keresel?</label>
+            <select
+              id="county"
+              name="county"
+              value={workerSearch.county}
               onChange={(event) =>
                 setWorkerSearch((current) => ({
                   ...current,
-                  serviceArea: event.target.value,
+                  county: event.target.value,
                 }))
               }
-            />
+            >
+              <option value="">Minden megye</option>
+              {counties.map((county) => (
+                <option key={county.value} value={county.value}>
+                  {county.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="field">
             <label htmlFor="trade">Milyen szakemberre van szükség?</label>
@@ -3096,6 +3229,24 @@ function App() {
                       </option>
                       {trades.map((trade) => (
                         <option key={trade}>{trade}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="problem-county">Megye</label>
+                    <select
+                      id="problem-county"
+                      required
+                      value={problemForm.county}
+                      onChange={(event) => updateProblemForm('county', event.target.value)}
+                    >
+                      <option value="" disabled>
+                        Válassz megyét
+                      </option>
+                      {counties.map((county) => (
+                        <option key={county.value} value={county.value}>
+                          {county.label}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -3322,7 +3473,7 @@ function App() {
                   <div className="admin-row" key={worker.id ?? worker.name}>
                     <div className="admin-row-copy">
                       <strong>{worker.name}</strong>
-                      <span>{worker.trade} · {worker.area}</span>
+                      <span>{worker.trade} · {worker.county} · {worker.area}</span>
                     </div>
                     <div className="admin-worker-controls">
                       <div className="admin-badge-actions">
@@ -3361,7 +3512,7 @@ function App() {
                   <div className="admin-row" key={problem.id ?? problem.title}>
                     <div>
                       <strong>{problem.title}</strong>
-                      <span>{problem.trade} · {problem.location}</span>
+                      <span>{problem.trade} · {problem.county} · {problem.location}</span>
                     </div>
                     <button
                       className="button danger"
@@ -3482,6 +3633,24 @@ function App() {
                 </option>
                 {trades.map((trade) => (
                   <option key={trade}>{trade}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="worker-county">Megye</label>
+              <select
+                id="worker-county"
+                required
+                value={workerForm.county}
+                onChange={(event) => updateWorkerForm('county', event.target.value)}
+              >
+                <option value="" disabled>
+                  Válassz megyét
+                </option>
+                {counties.map((county) => (
+                  <option key={county.value} value={county.value}>
+                    {county.label}
+                  </option>
                 ))}
               </select>
             </div>

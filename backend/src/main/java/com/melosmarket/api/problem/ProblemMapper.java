@@ -1,6 +1,7 @@
 package com.melosmarket.api.problem;
 
 import com.melosmarket.api.generated.model.CreateProblemRequest;
+import com.melosmarket.api.generated.model.County;
 import com.melosmarket.api.generated.model.Problem;
 import com.melosmarket.api.generated.model.ProblemImage;
 import com.melosmarket.api.generated.model.ProblemStatus;
@@ -23,6 +24,7 @@ class ProblemMapper {
         entity.setPhone(blankToNull(request.getPhone()));
         entity.setTrade(toEntityTrade(request.getTrade()));
         entity.setLocation(blankToNull(request.getLocation()));
+        entity.setCounty(toEntityCounty(request.getCounty()));
         entity.setStatus(ProblemStatusEntity.OPEN);
         return entity;
     }
@@ -33,6 +35,7 @@ class ProblemMapper {
         entity.setPhone(blankToNull(request.getPhone()));
         entity.setTrade(toEntityTrade(request.getTrade()));
         entity.setLocation(blankToNull(request.getLocation()));
+        entity.setCounty(toEntityCounty(request.getCounty()));
     }
 
     Problem toApi(ProblemEntity entity) {
@@ -46,6 +49,7 @@ class ProblemMapper {
                 .phone(entity.getPhone())
                 .trade(toApiTrade(entity.getTrade()))
                 .location(entity.getLocation())
+                .county(toApiCounty(entity.getCounty()))
                 .problemImages(entity.getProblemImages().stream()
                         .map(this::toApiProblemImage)
                         .toList());
@@ -55,12 +59,20 @@ class ProblemMapper {
         return trade == null ? null : TradeType.valueOf(trade.name());
     }
 
+    String toEntityCounty(County county) {
+        return county == null ? null : county.getValue();
+    }
+
     ProblemStatusEntity toEntityStatus(ProblemStatus status) {
         return status == null ? null : ProblemStatusEntity.valueOf(status.name());
     }
 
     private Trade toApiTrade(TradeType trade) {
         return trade == null ? null : Trade.valueOf(trade.name());
+    }
+
+    private County toApiCounty(String county) {
+        return county == null ? null : County.fromValue(county);
     }
 
     private ProblemStatus toApiStatus(ProblemStatusEntity status) {

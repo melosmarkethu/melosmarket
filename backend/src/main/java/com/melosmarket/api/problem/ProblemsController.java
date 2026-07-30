@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.melosmarket.api.generated.ProblemsApi;
 import com.melosmarket.api.generated.model.CreateProblemRequest;
+import com.melosmarket.api.generated.model.County;
 import com.melosmarket.api.generated.model.Problem;
 import com.melosmarket.api.generated.model.ProblemImage;
 import com.melosmarket.api.generated.model.ProblemStatus;
@@ -52,8 +53,8 @@ public class ProblemsController implements ProblemsApi {
     }
 
     @Override
-    public ResponseEntity<List<Problem>> searchProblems(Trade trade, ProblemStatus status, String location) {
-        return ResponseEntity.ok(problemService.searchProblems(trade, status, location));
+    public ResponseEntity<List<Problem>> searchProblems(Trade trade, ProblemStatus status, County county) {
+        return ResponseEntity.ok(problemService.searchProblems(trade, status, county));
     }
 
     @Override

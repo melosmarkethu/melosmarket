@@ -93,6 +93,9 @@ public class WorkerEntity {
     @Column(name = "service_area", length = 160)
     private String serviceArea;
 
+    @Column(length = 80)
+    private String county;
+
     @Column(columnDefinition = "text")
     private String description;
 
@@ -278,6 +281,14 @@ public class WorkerEntity {
 
     public void setServiceArea(String serviceArea) {
         this.serviceArea = serviceArea;
+    }
+
+    public String getCounty() {
+        return county;
+    }
+
+    public void setCounty(String county) {
+        this.county = county;
     }
 
     public String getDescription() {

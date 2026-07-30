@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 import com.melosmarket.api.auth.AuthContext;
@@ -13,6 +12,7 @@ import com.melosmarket.api.auth.AuthenticatedUser;
 import com.melosmarket.api.auth.persistence.AccountRole;
 import com.melosmarket.api.auth.persistence.UserEntity;
 import com.melosmarket.api.generated.model.CreateWorkerRequest;
+import com.melosmarket.api.generated.model.County;
 import com.melosmarket.api.generated.model.CreateWorkerReviewRequest;
 import com.melosmarket.api.generated.model.RegisterWorkerRequest;
 import com.melosmarket.api.generated.model.Trade;
@@ -96,12 +96,12 @@ public class WorkerService {
     }
 
     @Transactional(readOnly = true)
-    public List<Worker> searchWorkers(Trade trade, String serviceArea) {
+    public List<Worker> searchWorkers(Trade trade, County county) {
         WorkerTradeType entityTrade = workerMapper.toEntityTrade(trade);
-        String normalizedServiceArea = serviceArea == null || serviceArea.isBlank() ? null : serviceArea.trim();
+        String normalizedCounty = workerMapper.toEntityCounty(county);
 
         return workerRepository
-                .findAll(workerSearch(entityTrade, normalizedServiceArea))
+                .findAll(workerSearch(entityTrade, normalizedCounty))
                 .stream()
                 .map(workerMapper::toApi)
                 .toList();
@@ -164,6 +164,7 @@ public class WorkerService {
         entity.setTaxNumber(blankToNull(request.getTaxNumber()));
         entity.setTrade(workerMapper.toEntityTrade(request.getTrade()));
         entity.setServiceArea(blankToNull(request.getServiceArea()));
+        entity.setCounty(workerMapper.toEntityCounty(request.getCounty()));
         entity.setDescription(blankToNull(request.getDescription()));
         entity.setAvailabilityStatus(workerMapper.toEntityAvailabilityStatus(request.getAvailabilityStatus()));
         entity.setUrgentWork(Boolean.TRUE.equals(request.getUrgentWork()));
@@ -272,7 +273,7 @@ public class WorkerService {
         return workerMapper.toApiReview(reviewRepository.save(review));
     }
 
-    private Specification<WorkerEntity> workerSearch(WorkerTradeType trade, String serviceArea) {
+    private Specification<WorkerEntity> workerSearch(WorkerTradeType trade, String county) {
         return (root, query, criteriaBuilder) -> {
             query.orderBy(criteriaBuilder.desc(root.get("createdAt")));
 
@@ -283,9 +284,8 @@ public class WorkerService {
             if (trade != null) {
                 predicates.add(criteriaBuilder.equal(root.get("trade"), trade));
             }
-            if (serviceArea != null) {
-                String pattern = "%" + serviceArea.toLowerCase(Locale.ROOT) + "%";
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("serviceArea")), pattern));
+            if (county != null) {
+                predicates.add(criteriaBuilder.equal(root.get("county"), county));
             }
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));

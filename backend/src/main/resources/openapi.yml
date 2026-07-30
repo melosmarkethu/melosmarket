@@ -267,12 +267,11 @@ paths:
           required: false
           schema:
             $ref: '#/components/schemas/Trade'
-        - name: serviceArea
+        - name: county
           in: query
           required: false
           schema:
-            type: string
-            maxLength: 160
+            $ref: '#/components/schemas/County'
       responses:
         '200':
           description: Workers matching the search criteria.
@@ -491,12 +490,11 @@ paths:
           required: false
           schema:
             $ref: '#/components/schemas/ProblemStatus'
-        - name: location
+        - name: county
           in: query
           required: false
           schema:
-            type: string
-            maxLength: 180
+            $ref: '#/components/schemas/County'
       responses:
         '200':
           description: Problems matching the search criteria.
@@ -754,6 +752,30 @@ components:
         - OPEN
         - IN_PROGRESS
         - CLOSED
+    County:
+      type: string
+      description: Hungarian county or Budapest used for filtering.
+      enum:
+        - BUDAPEST
+        - BACS_KISKUN
+        - BARANYA
+        - BEKES
+        - BORSOD_ABAUJ_ZEMPLEN
+        - CSONGRAD_CSANAD
+        - FEJER
+        - GYOR_MOSON_SOPRON
+        - HAJDU_BIHAR
+        - HEVES
+        - JASZ_NAGYKUN_SZOLNOK
+        - KOMAROM_ESZTERGOM
+        - NOGRAD
+        - PEST
+        - SOMOGY
+        - SZABOLCS_SZATMAR_BEREG
+        - TOLNA
+        - VAS
+        - VESZPREM
+        - ZALA
     UserRole:
       type: string
       enum:
@@ -951,6 +973,8 @@ components:
           type: string
           nullable: true
           example: Oslo
+        county:
+          $ref: '#/components/schemas/County'
         description:
           type: string
           nullable: true
@@ -973,6 +997,7 @@ components:
         - contactName
         - email
         - trade
+        - county
       properties:
         businessName:
           type: string
@@ -1000,6 +1025,8 @@ components:
           type: string
           maxLength: 160
           nullable: true
+        county:
+          $ref: '#/components/schemas/County'
         description:
           type: string
           maxLength: 2000
@@ -1021,6 +1048,7 @@ components:
         - businessName
         - contactName
         - trade
+        - county
       properties:
         businessName:
           type: string
@@ -1044,6 +1072,8 @@ components:
           type: string
           maxLength: 160
           nullable: true
+        county:
+          $ref: '#/components/schemas/County'
         description:
           type: string
           maxLength: 2000
@@ -1184,6 +1214,8 @@ components:
           type: string
           nullable: true
           example: Oslo
+        county:
+          $ref: '#/components/schemas/County'
         status:
           $ref: '#/components/schemas/ProblemStatus'
         problemImages:
@@ -1198,6 +1230,7 @@ components:
       required:
         - title
         - description
+        - county
       properties:
         phone:
           type: string
@@ -1219,11 +1252,14 @@ components:
           type: string
           maxLength: 180
           nullable: true
+        county:
+          $ref: '#/components/schemas/County'
     UpdateProblemRequest:
       type: object
       required:
         - title
         - description
+        - county
       properties:
         phone:
           type: string
@@ -1245,6 +1281,8 @@ components:
           type: string
           maxLength: 180
           nullable: true
+        county:
+          $ref: '#/components/schemas/County'
     ProblemImage:
       type: object
       required:

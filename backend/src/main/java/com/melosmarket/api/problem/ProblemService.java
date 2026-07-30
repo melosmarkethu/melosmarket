@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 import com.melosmarket.api.auth.AuthContext;
@@ -14,6 +13,7 @@ import com.melosmarket.api.auth.persistence.AccountRole;
 import com.melosmarket.api.customer.persistence.CustomerEntity;
 import com.melosmarket.api.customer.persistence.CustomerRepository;
 import com.melosmarket.api.generated.model.CreateProblemRequest;
+import com.melosmarket.api.generated.model.County;
 import com.melosmarket.api.generated.model.Problem;
 import com.melosmarket.api.generated.model.ProblemImage;
 import com.melosmarket.api.generated.model.ProblemStatus;
@@ -148,13 +148,13 @@ public class ProblemService {
     }
 
     @Transactional(readOnly = true)
-    public List<Problem> searchProblems(Trade trade, ProblemStatus status, String location) {
+    public List<Problem> searchProblems(Trade trade, ProblemStatus status, County county) {
         TradeType entityTrade = problemMapper.toEntityTrade(trade);
         ProblemStatusEntity entityStatus = problemMapper.toEntityStatus(status);
-        String normalizedLocation = location == null || location.isBlank() ? null : location.trim();
+        String normalizedCounty = problemMapper.toEntityCounty(county);
 
         return problemRepository
-                .findAll(problemSearch(entityTrade, entityStatus, normalizedLocation))
+                .findAll(problemSearch(entityTrade, entityStatus, normalizedCounty))
                 .stream()
                 .map(problemMapper::toApi)
                 .toList();
@@ -226,7 +226,7 @@ public class ProblemService {
     private Specification<ProblemEntity> problemSearch(
             TradeType trade,
             ProblemStatusEntity status,
-            String location) {
+            String county) {
         return (root, query, criteriaBuilder) -> {
             query.orderBy(criteriaBuilder.desc(root.get("createdAt")));
 
@@ -237,9 +237,8 @@ public class ProblemService {
             if (status != null) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
             }
-            if (location != null) {
-                String pattern = "%" + location.toLowerCase(Locale.ROOT) + "%";
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("location")), pattern));
+            if (county != null) {
+                predicates.add(criteriaBuilder.equal(root.get("county"), county));
             }
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));

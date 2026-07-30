@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.melosmarket.api.generated.WorkersApi;
 import com.melosmarket.api.generated.model.CreateWorkerRequest;
+import com.melosmarket.api.generated.model.County;
 import com.melosmarket.api.generated.model.CreateWorkerReviewRequest;
 import com.melosmarket.api.generated.model.Trade;
 import com.melosmarket.api.generated.model.UpdateWorkerProfileRequest;
@@ -42,8 +43,8 @@ public class WorkersController implements WorkersApi {
     }
 
     @Override
-    public ResponseEntity<List<Worker>> searchWorkers(Trade trade, String serviceArea) {
-        return ResponseEntity.ok(workerService.searchWorkers(trade, serviceArea));
+    public ResponseEntity<List<Worker>> searchWorkers(Trade trade, County county) {
+        return ResponseEntity.ok(workerService.searchWorkers(trade, county));
     }
 
     @Override
