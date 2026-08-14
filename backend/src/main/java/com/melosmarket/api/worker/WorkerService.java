@@ -108,6 +108,11 @@ public class WorkerService {
     }
 
     @Transactional(readOnly = true)
+    public long countWorkers() {
+        return workerRepository.count();
+    }
+
+    @Transactional(readOnly = true)
     public List<Worker> listAdminWorkers() {
         requireAdmin();
         return workerRepository.findAll()

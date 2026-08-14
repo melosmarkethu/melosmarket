@@ -48,6 +48,11 @@ public class WorkersController implements WorkersApi {
     }
 
     @Override
+    public ResponseEntity<Long> getWorkerCount() {
+        return ResponseEntity.ok(workerService.countWorkers());
+    }
+
+    @Override
     public ResponseEntity<Worker> updateMyWorkerProfile(UpdateWorkerProfileRequest updateWorkerProfileRequest) {
         return ResponseEntity.ok(workerService.updateMyWorkerProfile(updateWorkerProfileRequest));
     }

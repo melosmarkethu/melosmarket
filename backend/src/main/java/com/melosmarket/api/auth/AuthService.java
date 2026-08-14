@@ -107,6 +107,11 @@ public class AuthService {
         return currentUser(user.getId(), user.getEmail(), user.getRole(), workerId, user.isEmailVerified());
     }
 
+    @Transactional(readOnly = true)
+    public long countRegisteredUsers() {
+        return userRepository.count();
+    }
+
     @Transactional
     public CurrentUser verifyEmail(VerifyEmailRequest request) {
         UserEntity user = emailVerificationService.verifyEmail(request.getToken());

@@ -170,6 +170,20 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /auth/registered-users/count:
+    get:
+      tags:
+        - Auth
+      operationId: getRegisteredUserCount
+      summary: Count registered user accounts
+      responses:
+        '200':
+          description: Registered user count.
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
   /auth/me:
     get:
       tags:
@@ -301,6 +315,20 @@ paths:
                 $ref: '#/components/schemas/Worker'
         '400':
           $ref: '#/components/responses/BadRequest'
+  /workers/count:
+    get:
+      tags:
+        - Workers
+      operationId: getWorkerCount
+      summary: Count registered workers
+      responses:
+        '200':
+          description: Registered worker count.
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
   /workers/{workerId}:
     get:
       tags:

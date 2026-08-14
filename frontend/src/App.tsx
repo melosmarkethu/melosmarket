@@ -62,11 +62,9 @@ type WorkerCard = {
   county: string
   area: string
   rating: string
-  jobs: string
   verified: boolean
   topWorker: boolean
   manyReferences: boolean
-  hundredJobs: boolean
   fastResponder: boolean
   availabilityStatus: WorkerAvailabilityStatus
   urgentWork: boolean
@@ -200,14 +198,12 @@ type WorkerBadgeKey =
   | 'topWorker'
   | 'verified'
   | 'manyReferences'
-  | 'hundredJobs'
   | 'fastResponder'
 
 const workerBadgeDefinitions: Array<{ key: WorkerBadgeKey; label: string }> = [
   { key: 'topWorker', label: '⭐ Top szakember' },
   { key: 'verified', label: '✔️ Ellenőrzött profil' },
   { key: 'manyReferences', label: '📸 Sok referencia' },
-  { key: 'hundredJobs', label: '🏆 100+ sikeres munka' },
   { key: 'fastResponder', label: '⚡ Gyors válaszoló' },
 ]
 
@@ -375,11 +371,9 @@ const initialWorkers: WorkerCard[] = [
     county: 'Budapest',
     area: 'Budapest és környéke',
     rating: '4.9',
-    jobs: '128 munka',
     verified: true,
     topWorker: true,
     manyReferences: true,
-    hundredJobs: true,
     fastResponder: true,
     availabilityStatus: 'AVAILABLE',
     urgentWork: true,
@@ -397,11 +391,9 @@ const initialWorkers: WorkerCard[] = [
     county: 'Pest megye',
     area: 'Pest megye',
     rating: '4.8',
-    jobs: '84 munka',
     verified: false,
     topWorker: false,
     manyReferences: false,
-    hundredJobs: false,
     fastResponder: false,
     availabilityStatus: 'LIMITED',
     urgentWork: false,
@@ -419,11 +411,9 @@ const initialWorkers: WorkerCard[] = [
     county: 'Budapest',
     area: 'Budapest nyugati része',
     rating: '4.7',
-    jobs: '96 munka',
     verified: false,
     topWorker: false,
     manyReferences: false,
-    hundredJobs: false,
     fastResponder: true,
     availabilityStatus: 'AVAILABLE',
     urgentWork: true,
@@ -523,6 +513,8 @@ function App() {
     county: '',
   })
   const [workerCards, setWorkerCards] = useState<WorkerCard[]>(initialWorkers)
+  const [workerRegistrationCount, setWorkerRegistrationCount] = useState<number | null>(null)
+  const [registeredUserCount, setRegisteredUserCount] = useState<number | null>(null)
   const [workerSearchStatus, setWorkerSearchStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [workerSearchMessage, setWorkerSearchMessage] = useState('')
   const [workerForm, setWorkerForm] = useState<WorkerFormState>({
@@ -591,11 +583,9 @@ function App() {
     county: worker.county ? countyLabelsByApiValue[worker.county] ?? worker.county : 'Nincs megadva',
     area: worker.serviceArea ?? 'Nincs megadva',
     rating: 'Új',
-    jobs: '0 munka',
     verified: Boolean(worker.verified),
     topWorker: Boolean(worker.topWorker),
     manyReferences: Boolean(worker.manyReferences),
-    hundredJobs: Boolean(worker.hundredJobs),
     fastResponder: Boolean(worker.fastResponder),
     availabilityStatus: worker.availabilityStatus ?? 'AVAILABLE',
     urgentWork: Boolean(worker.urgentWork),
@@ -747,6 +737,26 @@ function App() {
     const mappedWorkers = workersFromApi.map(workerFromApi)
     setWorkerCards(mappedWorkers.length > 0 || !useFallbackWhenEmpty ? mappedWorkers : initialWorkers)
     return mappedWorkers
+  }
+
+  const loadWorkerRegistrationCount = async () => {
+    const response = await fetch(`${apiBaseUrl}/workers/count`)
+    if (!response.ok) {
+      throw new Error(`Worker count failed with status ${response.status}`)
+    }
+    const count = await response.json()
+    setWorkerRegistrationCount(Number(count))
+    return Number(count)
+  }
+
+  const loadRegisteredUserCount = async () => {
+    const response = await fetch(`${apiBaseUrl}/auth/registered-users/count`)
+    if (!response.ok) {
+      throw new Error(`Registered user count failed with status ${response.status}`)
+    }
+    const count = await response.json()
+    setRegisteredUserCount(Number(count))
+    return Number(count)
   }
 
   const filterProblems = (problems: ProblemPost[], search = problemSearch) => {
@@ -1137,6 +1147,12 @@ function App() {
     loadWorkers(workerSearch, true).catch(() => {
       setWorkerCards(initialWorkers)
     })
+    loadWorkerRegistrationCount().catch(() => {
+      setWorkerRegistrationCount(null)
+    })
+    loadRegisteredUserCount().catch(() => {
+      setRegisteredUserCount(null)
+    })
     loadProblems(true).catch(() => {
       setProblemPosts(initialProblems)
     })
@@ -1475,7 +1491,6 @@ function App() {
           verified: badgeKey === 'verified' ? enabled : worker.verified,
           topWorker: badgeKey === 'topWorker' ? enabled : worker.topWorker,
           manyReferences: badgeKey === 'manyReferences' ? enabled : worker.manyReferences,
-          hundredJobs: badgeKey === 'hundredJobs' ? enabled : worker.hundredJobs,
           fastResponder: badgeKey === 'fastResponder' ? enabled : worker.fastResponder,
         }),
       })
@@ -1639,6 +1654,12 @@ function App() {
       })
       setWorkerSubmitState('success')
       setWorkerSubmitMessage('A szakember regisztrációja sikeres. Be is jelentkeztél.')
+      loadWorkerRegistrationCount().catch(() => {
+        setWorkerRegistrationCount(null)
+      })
+      loadRegisteredUserCount().catch(() => {
+        setRegisteredUserCount(null)
+      })
     } catch (error) {
       console.error('Worker registration failed', error)
       setWorkerSubmitState('error')
@@ -1669,6 +1690,9 @@ function App() {
       setCustomerForm({ email: '', password: '' })
       setCustomerSubmitState('success')
       setCustomerSubmitMessage('Sikeres regisztráció. Most már feltöltheted a problémádat.')
+      loadRegisteredUserCount().catch(() => {
+        setRegisteredUserCount(null)
+      })
     } catch {
       setCustomerSubmitState('error')
       setCustomerSubmitMessage('Nem sikerült regisztrálni. Lehet, hogy ez az email cím már használatban van.')
@@ -1954,7 +1978,6 @@ function App() {
           <div className="worker-meta">
             <span>{worker.county}</span>
             <span>{worker.area}</span>
-            <span>{worker.jobs}</span>
           </div>
         </button>
       )) : (
@@ -2302,7 +2325,6 @@ function App() {
               <span className="trade-pill">{selectedWorker.trade}</span>
               <span>{selectedWorker.county}</span>
               <span>{selectedWorker.area}</span>
-              <span>{selectedWorker.jobs}</span>
             </div>
           </div>
 
@@ -2332,10 +2354,6 @@ function App() {
               <div>
                 <dt>Terület</dt>
                 <dd>{selectedWorker.area}</dd>
-              </div>
-              <div>
-                <dt>Elvégzett munkák</dt>
-                <dd>{selectedWorker.jobs}</dd>
               </div>
               {selectedWorker.email && (
                 <div>
@@ -3115,17 +3133,26 @@ function App() {
       </section>
 
       <section className="trust-strip" aria-label="Piactér kiemelések">
-        <div>
-          <strong>240+</strong>
-          <span>ellenőrzött szakember</span>
+        <div className="campaign-card featured">
+          <span className="campaign-eyebrow">Bevezető ajánlat szakembereknek</span>
+          <strong>6 hónap ingyenes tagság</strong>
+          <span>az első 100 regisztrált szakembernek</span>
+          <span className="campaign-counter">
+            {workerRegistrationCount === null ? '-/100' : `${Math.min(workerRegistrationCount, 100)}/100`}
+          </span>
         </div>
-        <div>
-          <strong>18 perc</strong>
-          <span>átlagos első válasz</span>
+        <div className="campaign-card">
+          <span className="campaign-eyebrow">Nyereményjáték</span>
+          <strong>100 000 Ft OBI utalvány</strong>
+          <span>kisorsolása az első 300 felhasználó után</span>
+          <span className="campaign-counter secondary">
+            {registeredUserCount === null ? '-/300' : `${Math.min(registeredUserCount, 300)}/300`}
+          </span>
         </div>
-        <div>
-          <strong>4.8/5</strong>
-          <span>átlagos ügyfélértékelés</span>
+        <div className="campaign-card">
+          <span className="campaign-eyebrow">Indulási lehetőség</span>
+          <strong>Legyél az elsők között</strong>
+          <span>regisztrálj most, és szerezz nagyobb láthatóságot a platform induló időszakában</span>
         </div>
       </section>
 

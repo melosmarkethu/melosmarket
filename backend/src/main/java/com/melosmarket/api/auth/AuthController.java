@@ -32,6 +32,11 @@ public class AuthController implements AuthApi {
     }
 
     @Override
+    public ResponseEntity<Long> getRegisteredUserCount() {
+        return ResponseEntity.ok(authService.countRegisteredUsers());
+    }
+
+    @Override
     public ResponseEntity<AuthResponse> registerWorker(RegisterWorkerRequest registerWorkerRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerWorker(registerWorkerRequest));
     }
