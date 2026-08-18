@@ -138,7 +138,9 @@ public class WorkerService {
         worker.setVerified(request.getVerified());
         worker.setTopWorker(request.getTopWorker());
         worker.setManyReferences(request.getManyReferences());
-        worker.setHundredJobs(request.getHundredJobs());
+        if (request.getHundredJobs() != null) {
+            worker.setHundredJobs(request.getHundredJobs());
+        }
         worker.setFastResponder(request.getFastResponder());
         return workerMapper.toApi(worker);
     }

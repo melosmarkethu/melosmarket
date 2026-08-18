@@ -1116,7 +1116,6 @@ components:
         - verified
         - topWorker
         - manyReferences
-        - hundredJobs
         - fastResponder
       properties:
         verified:
