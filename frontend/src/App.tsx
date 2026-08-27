@@ -219,14 +219,6 @@ const workerAvailabilityLabels: Record<WorkerAvailabilityStatus, string> = Objec
 
 const urgentWorkBadge = { key: 'urgentWork', label: '⚡ Sürgős munkát is vállal' }
 
-const accessStatusLabels: Record<WorkerAccessStatus, string> = {
-  TRIALING: 'Ingyenes próbaidő',
-  TRIAL_EXPIRED: 'Próbaidő lejárt',
-  ACTIVE: 'Előfizetés aktív',
-  PAST_DUE: 'Fizetés rendezésre vár',
-  CANCELED: 'Előfizetés lemondva',
-}
-
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
 const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '')
 
@@ -638,15 +630,6 @@ function App() {
       current.map((problem) => (problem.id === updatedProblem.id ? updatedProblem : problem)),
     )
   }
-
-  const formatHungarianDate = (dateValue?: string) =>
-    dateValue
-      ? new Date(dateValue).toLocaleDateString('hu-HU', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
-      : 'Nincs megadva'
 
   const authHeaders = () => ({
     Authorization: `Bearer ${authToken}`,
@@ -2279,15 +2262,6 @@ function App() {
       profileCompletionTips.length > 0
         ? `${profileCompletionTips.join(' és ')}, hogy előrébb kerülj a találatok között.`
         : 'Szuper, a profilod erős állapotban van. Tartsd frissen a referenciákat és az elérhetőségeket.'
-    const trialPanelCopy =
-      selectedWorker.accessStatus === 'TRIALING'
-        ? `Még ${selectedWorker.trialDaysRemaining} nap van hátra az ingyenes próbaidőből. Addig a profilod megjelenik a találatok között.`
-        : selectedWorker.accessStatus === 'TRIAL_EXPIRED'
-          ? 'A 30 napos próbaidőd lejárt. Előfizetés szükséges, hogy a profilod újra megjelenjen a találatok között.'
-          : selectedWorker.accessStatus === 'ACTIVE'
-            ? 'Az előfizetésed aktív, a profilod megjelenhet a találatok között.'
-            : 'A fizetésed rendezésre vár. A profilod csak akkor jelenik meg újra, ha az előfizetés rendben van.'
-
     return (
       <main className="page-shell">
         <header className="site-header">
@@ -2379,23 +2353,6 @@ function App() {
           {isOwnProfile && (
             <div className="profile-panel">
               <p className="section-kicker">Saját profil</p>
-              <div className={`trial-card ${selectedWorker.accessStatus === 'TRIAL_EXPIRED' ? 'expired' : ''}`}>
-                <div className="trial-card-header">
-                  <div>
-                    <h2>{accessStatusLabels[selectedWorker.accessStatus]}</h2>
-                    <p>{trialPanelCopy}</p>
-                  </div>
-                  <strong>
-                    {selectedWorker.accessStatus === 'TRIALING'
-                      ? `${selectedWorker.trialDaysRemaining} nap`
-                      : accessStatusLabels[selectedWorker.accessStatus]}
-                  </strong>
-                </div>
-                <div className="trial-meta">
-                  <span>Próba kezdete: {formatHungarianDate(selectedWorker.trialStartedAt)}</span>
-                  <span>Próba vége: {formatHungarianDate(selectedWorker.trialEndsAt)}</span>
-                </div>
-              </div>
               <div className="completion-card" aria-label="Profil kitöltöttsége">
                 <div className="completion-header">
                   <div>

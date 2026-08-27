@@ -123,7 +123,7 @@ public class WorkerEntity {
             trialStartedAt = createdAt;
         }
         if (trialEndsAt == null) {
-            trialEndsAt = trialStartedAt.plusDays(30);
+            trialEndsAt = trialStartedAt.plusMonths(6);
         }
     }
 

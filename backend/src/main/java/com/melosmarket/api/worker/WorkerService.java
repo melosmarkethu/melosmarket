@@ -22,7 +22,6 @@ import com.melosmarket.api.generated.model.Worker;
 import com.melosmarket.api.generated.model.WorkerReferenceImage;
 import com.melosmarket.api.generated.model.WorkerReview;
 import com.melosmarket.api.worker.domain.WorkerTradeType;
-import com.melosmarket.api.worker.domain.WorkerSubscriptionStatus;
 import com.melosmarket.api.worker.persistence.WorkerEntity;
 import com.melosmarket.api.worker.persistence.WorkerReferenceImageEntity;
 import com.melosmarket.api.worker.persistence.WorkerReferenceImageRepository;
@@ -285,9 +284,6 @@ public class WorkerService {
             query.orderBy(criteriaBuilder.desc(root.get("createdAt")));
 
             List<Predicate> predicates = new ArrayList<>();
-            predicates.add(criteriaBuilder.or(
-                    criteriaBuilder.equal(root.get("subscriptionStatus"), WorkerSubscriptionStatus.ACTIVE),
-                    criteriaBuilder.greaterThan(root.get("trialEndsAt"), java.time.OffsetDateTime.now())));
             if (trade != null) {
                 predicates.add(criteriaBuilder.equal(root.get("trade"), trade));
             }
