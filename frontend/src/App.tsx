@@ -2630,7 +2630,6 @@ function App() {
                   </button>
                 )}
                 <img src={work.imageUrl} alt={work.title} />
-                <h3>{work.title}</h3>
               </article>
             ))}
           </div>
