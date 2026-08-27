@@ -239,11 +239,18 @@ const slugify = (value: string) =>
 
 const workerProfileSlug = (worker: WorkerCard) => {
   const nameSlug = slugify(worker.name) || 'szakember'
-  const citySlug = worker.area === 'Nincs megadva' ? '' : slugify(worker.area)
-  return citySlug ? `${nameSlug}-${citySlug}` : nameSlug
+  const tradeSlug = worker.trade === 'Nincs megadva' ? 'nincs-megadva' : slugify(worker.trade) || 'nincs-megadva'
+  const countySlug = worker.county === 'Nincs megadva' ? 'nincs-megadva' : slugify(worker.county) || 'nincs-megadva'
+  return `${tradeSlug}/${countySlug}/${nameSlug}`
 }
 
 const workerProfilePath = (worker: WorkerCard) => `/${workerProfileSlug(worker)}`
+
+const legacyWorkerProfileSlugs = (worker: WorkerCard) => {
+  const nameSlug = slugify(worker.name) || 'szakember'
+  const citySlug = worker.area === 'Nincs megadva' ? '' : slugify(worker.area)
+  return citySlug ? [nameSlug, `${nameSlug}-${citySlug}`] : [nameSlug]
+}
 
 const problemProfileSlug = (problem: ProblemPost) => {
   const titleSlug = slugify(problem.title) || 'problema'
@@ -1167,7 +1174,9 @@ function App() {
         return
       }
 
-      const worker = workerCards.find((item) => workerProfileSlug(item) === pathSlug)
+      const worker = workerCards.find(
+        (item) => workerProfileSlug(item) === pathSlug || legacyWorkerProfileSlugs(item).includes(pathSlug),
+      )
       if (worker) {
         openWorkerProfile(worker, false)
         setSelectedProblem(null)
