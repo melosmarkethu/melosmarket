@@ -963,6 +963,16 @@ components:
           type: string
           nullable: true
           example: /api/uploads/worker-profile-images/10-avatar.jpg
+        facebookUrl:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: https://www.facebook.com/melosmarket
+        instagramUrl:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: https://www.instagram.com/melosmarket
         verified:
           type: boolean
           example: false
@@ -1093,6 +1103,14 @@ components:
         taxNumber:
           type: string
           maxLength: 50
+          nullable: true
+        facebookUrl:
+          type: string
+          maxLength: 500
+          nullable: true
+        instagramUrl:
+          type: string
+          maxLength: 500
           nullable: true
         trade:
           $ref: '#/components/schemas/Trade'

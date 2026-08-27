@@ -63,6 +63,8 @@ class WorkerMapper {
                 .phone(entity.getPhone())
                 .taxNumber(entity.getTaxNumber())
                 .profileImageUrl(entity.getProfileImageUrl())
+                .facebookUrl(entity.getFacebookUrl())
+                .instagramUrl(entity.getInstagramUrl())
                 .verified(entity.isVerified())
                 .topWorker(entity.isTopWorker())
                 .manyReferences(entity.isManyReferences())

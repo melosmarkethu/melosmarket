@@ -54,6 +54,12 @@ public class WorkerEntity {
     @Column(name = "profile_image_storage_path", length = 500)
     private String profileImageStoragePath;
 
+    @Column(name = "facebook_url", length = 500)
+    private String facebookUrl;
+
+    @Column(name = "instagram_url", length = 500)
+    private String instagramUrl;
+
     @Column(nullable = false)
     private boolean verified;
 
@@ -185,6 +191,22 @@ public class WorkerEntity {
 
     public void setProfileImageStoragePath(String profileImageStoragePath) {
         this.profileImageStoragePath = profileImageStoragePath;
+    }
+
+    public String getFacebookUrl() {
+        return facebookUrl;
+    }
+
+    public void setFacebookUrl(String facebookUrl) {
+        this.facebookUrl = facebookUrl;
+    }
+
+    public String getInstagramUrl() {
+        return instagramUrl;
+    }
+
+    public void setInstagramUrl(String instagramUrl) {
+        this.instagramUrl = instagramUrl;
     }
 
     public boolean isVerified() {

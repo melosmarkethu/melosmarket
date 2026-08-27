@@ -168,6 +168,8 @@ public class WorkerService {
         entity.setContactName(request.getContactName());
         entity.setPhone(blankToNull(request.getPhone()));
         entity.setTaxNumber(blankToNull(request.getTaxNumber()));
+        entity.setFacebookUrl(blankToNull(request.getFacebookUrl()));
+        entity.setInstagramUrl(blankToNull(request.getInstagramUrl()));
         entity.setTrade(workerMapper.toEntityTrade(request.getTrade()));
         entity.setServiceArea(blankToNull(request.getServiceArea()));
         entity.setCounty(workerMapper.toEntityCounty(request.getCounty()));

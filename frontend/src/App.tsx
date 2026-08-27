@@ -58,6 +58,8 @@ type WorkerCard = {
   phone?: string
   taxNumber?: string
   profileImageUrl?: string
+  facebookUrl?: string
+  instagramUrl?: string
   trade: string
   county: string
   area: string
@@ -122,6 +124,8 @@ type WorkerApiResponse = {
   phone?: string
   taxNumber?: string
   profileImageUrl?: string
+  facebookUrl?: string
+  instagramUrl?: string
   trade: string
   county?: string
   verified?: boolean
@@ -181,6 +185,8 @@ type WorkerProfileEditState = {
   contactName: string
   phone: string
   taxNumber: string
+  facebookUrl: string
+  instagramUrl: string
   trade: string
   county: string
   serviceArea: string
@@ -236,6 +242,13 @@ const slugify = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
+
+const externalUrl = (value?: string) => {
+  if (!value) {
+    return ''
+  }
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`
+}
 
 const workerProfileSlug = (worker: WorkerCard) => {
   const nameSlug = slugify(worker.name) || 'szakember'
@@ -498,6 +511,8 @@ function App() {
     contactName: '',
     phone: '',
     taxNumber: '',
+    facebookUrl: '',
+    instagramUrl: '',
     trade: '',
     county: '',
     serviceArea: '',
@@ -578,6 +593,8 @@ function App() {
     phone: worker.phone,
     taxNumber: worker.taxNumber,
     profileImageUrl: resolveApiImageUrl(worker.profileImageUrl),
+    facebookUrl: worker.facebookUrl,
+    instagramUrl: worker.instagramUrl,
     trade: tradeLabelsByApiValue[worker.trade] ?? worker.trade,
     county: worker.county ? countyLabelsByApiValue[worker.county] ?? worker.county : 'Nincs megadva',
     area: worker.serviceArea ?? 'Nincs megadva',
@@ -843,6 +860,8 @@ function App() {
       contactName: worker.contactName ?? '',
       phone: worker.phone ?? '',
       taxNumber: worker.taxNumber ?? '',
+      facebookUrl: worker.facebookUrl ?? '',
+      instagramUrl: worker.instagramUrl ?? '',
       trade: worker.trade,
       county: countyApiValuesByLabel[worker.county] ?? '',
       serviceArea: worker.area === 'Nincs megadva' ? '' : worker.area,
@@ -1564,6 +1583,8 @@ function App() {
           contactName: profileEditForm.contactName,
           phone: profileEditForm.phone || undefined,
           taxNumber: profileEditForm.taxNumber || undefined,
+          facebookUrl: profileEditForm.facebookUrl || undefined,
+          instagramUrl: profileEditForm.instagramUrl || undefined,
           trade: tradeApiValues[profileEditForm.trade],
           county: profileEditForm.county,
           serviceArea: profileEditForm.serviceArea || undefined,
@@ -2298,6 +2319,38 @@ function App() {
                     ✓
                   </span>
                 )}
+                {(selectedWorker.facebookUrl || selectedWorker.instagramUrl) && (
+                  <div className="profile-social-links" aria-label="Közösségi oldalak">
+                    {selectedWorker.facebookUrl && (
+                      <a
+                        className="social-link facebook"
+                        href={externalUrl(selectedWorker.facebookUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${selectedWorker.name} Facebook oldala`}
+                        title="Facebook"
+                      >
+                        f
+                      </a>
+                    )}
+                    {selectedWorker.instagramUrl && (
+                      <a
+                        className="social-link instagram"
+                        href={externalUrl(selectedWorker.instagramUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${selectedWorker.name} Instagram oldala`}
+                        title="Instagram"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <rect x="5" y="5" width="14" height="14" rx="4" />
+                          <circle cx="12" cy="12" r="3.2" />
+                          <circle cx="16.5" cy="7.5" r="0.9" />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <p>{selectedWorker.description}</p>
@@ -2432,6 +2485,26 @@ function App() {
                     placeholder="12345678-1-42"
                     value={profileEditForm.taxNumber}
                     onChange={(event) => updateProfileEditForm('taxNumber', event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="profile-facebook-url">Facebook</label>
+                  <input
+                    id="profile-facebook-url"
+                    maxLength={500}
+                    placeholder="https://facebook.com/profilod"
+                    value={profileEditForm.facebookUrl}
+                    onChange={(event) => updateProfileEditForm('facebookUrl', event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="profile-instagram-url">Instagram</label>
+                  <input
+                    id="profile-instagram-url"
+                    maxLength={500}
+                    placeholder="https://instagram.com/profilod"
+                    value={profileEditForm.instagramUrl}
+                    onChange={(event) => updateProfileEditForm('instagramUrl', event.target.value)}
                   />
                 </div>
                 <div className="field">
