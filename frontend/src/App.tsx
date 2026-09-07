@@ -3175,7 +3175,7 @@ function App() {
       <section className="trust-strip" aria-label="Piactér kiemelések">
         <div className="campaign-card featured">
           <span className="campaign-eyebrow">Bevezető ajánlat szakembereknek</span>
-          <strong>6 hónap ingyenes tagság</strong>
+          <strong>2027 január 10-ig ingyenes tagság</strong>
           <span>az első 100 regisztrált szakembernek</span>
           <span className="campaign-counter">
             {workerRegistrationCount === null ? '-/100' : `${Math.min(workerRegistrationCount, 100)}/100`}
