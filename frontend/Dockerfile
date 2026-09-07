@@ -3,7 +3,9 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 ARG VITE_API_BASE_URL=/api
+ARG VITE_PUBLIC_BASE_URL=https://melosmarket.hu
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_PUBLIC_BASE_URL=$VITE_PUBLIC_BASE_URL
 
 COPY package*.json ./
 RUN npm ci

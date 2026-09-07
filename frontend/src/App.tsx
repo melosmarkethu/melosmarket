@@ -226,6 +226,7 @@ const workerAvailabilityLabels: Record<WorkerAvailabilityStatus, string> = Objec
 const urgentWorkBadge = { key: 'urgentWork', label: '⚡ Sürgős munkát is vállal' }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
+const publicBaseUrl = import.meta.env.VITE_PUBLIC_BASE_URL ?? window.location.origin
 const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '')
 
 const resolveApiImageUrl = (imageUrl?: string) => {
@@ -272,6 +273,20 @@ const problemProfileSlug = (problem: ProblemPost) => {
 }
 
 const problemProfilePath = (problem: ProblemPost) => `/${problemProfileSlug(problem)}`
+
+const updateCanonicalLink = (pathname: string) => {
+  const canonicalUrl = new URL(pathname === '' ? '/' : pathname, publicBaseUrl).toString()
+  const existingCanonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (existingCanonical) {
+    existingCanonical.href = canonicalUrl
+    return
+  }
+
+  const canonicalLink = document.createElement('link')
+  canonicalLink.rel = 'canonical'
+  canonicalLink.href = canonicalUrl
+  document.head.appendChild(canonicalLink)
+}
 
 const ignoredRouteSlugs = new Set([
   'adatkezeles.html',
@@ -1215,6 +1230,21 @@ function App() {
     window.addEventListener('popstate', openProfileFromPath)
     return () => window.removeEventListener('popstate', openProfileFromPath)
   }, [workerCards, problemPosts])
+
+  useEffect(() => {
+    let canonicalPath = window.location.pathname.replace(/\/+$/, '') || '/'
+    if (selectedWorker) {
+      canonicalPath = workerProfilePath(selectedWorker)
+    } else if (selectedProblem) {
+      canonicalPath = problemProfilePath(selectedProblem)
+    } else if (isWorkerSearchPage) {
+      canonicalPath = '/szakemberek'
+    } else if (isProblemSearchPage) {
+      canonicalPath = '/munkak'
+    }
+
+    updateCanonicalLink(canonicalPath)
+  }, [selectedWorker, selectedProblem, isWorkerSearchPage, isProblemSearchPage])
 
   useEffect(() => {
     if (!authToken) {

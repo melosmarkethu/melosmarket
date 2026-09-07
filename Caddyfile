@@ -1,11 +1,8 @@
-:80 {
-    encode gzip
-
-    reverse_proxy /api/* backend:8080
-    reverse_proxy frontend:80
+www.{$PRIMARY_DOMAIN} {
+    redir https://{$PRIMARY_DOMAIN}{uri} permanent
 }
 
-{$PRIMARY_DOMAIN}, www.{$PRIMARY_DOMAIN} {
+{$PRIMARY_DOMAIN} {
     encode gzip
 
     reverse_proxy /api/* backend:8080

@@ -48,6 +48,7 @@ services:
       context: ./frontend
       args:
         VITE_API_BASE_URL: /api
+        VITE_PUBLIC_BASE_URL: ${MELOSMARKET_PUBLIC_BASE_URL:-https://melosmarket.hu}
     container_name: melosmarket-frontend
     restart: unless-stopped
     depends_on:
