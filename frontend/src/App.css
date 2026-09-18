@@ -100,12 +100,19 @@
   box-shadow: 0 10px 24px rgba(22, 47, 37, 0.07);
 }
 
+.header-prize-row {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  margin: -14px 0 24px;
+}
+
 .header-prize-note {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   width: fit-content;
-  margin: -14px auto 24px;
+  margin: 0;
   border: 1px solid rgba(220, 38, 38, 0.16);
   border-radius: 999px;
   padding: 7px 11px;
@@ -1713,10 +1720,8 @@ textarea:focus {
   }
 
   .header-prize-note {
-    order: 2;
     max-width: 100%;
     width: 100%;
-    margin: 0;
     justify-content: center;
     border-radius: 8px;
     font-size: 0.78rem;

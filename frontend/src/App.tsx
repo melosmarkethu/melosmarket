@@ -3351,10 +3351,12 @@ function App() {
           </div>
       </header>
 
-      <p className="header-prize-note">
-        <span aria-hidden="true">🎁</span>
-        Regisztrálj és nyerd meg a 100 000 Ft-os OBI utalványt
-      </p>
+      <div className="header-prize-row">
+        <p className="header-prize-note">
+          <span aria-hidden="true">🎁</span>
+          Regisztrálj és nyerd meg a 100 000 Ft-os OBI utalványt
+        </p>
+      </div>
 
       {verificationModalOpen && (
         <div className="modal-backdrop" role="presentation">
