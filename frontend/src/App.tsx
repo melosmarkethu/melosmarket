@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
 
@@ -406,6 +406,56 @@ const tradeLabelsByApiValue: Record<string, string> = Object.fromEntries(
   Object.entries(tradeApiValues).map(([label, value]) => [value, label]),
 )
 
+type WorkerSearchState = {
+  trade: string
+  county: string
+}
+
+const countySlugValuesBySlug: Record<string, string> = Object.fromEntries(
+  counties.map((county) => [slugify(county.label), county.value]),
+)
+
+const tradeLabelsBySlug: Record<string, string> = Object.fromEntries(
+  trades.map((trade) => [slugify(trade), trade]),
+)
+
+const workerSearchPath = (search: WorkerSearchState) => {
+  const countySlug = search.county ? slugify(countyLabelsByApiValue[search.county] ?? search.county) : ''
+  const tradeSlug = search.trade ? slugify(search.trade) : ''
+  return `/szakemberek${countySlug ? `/${countySlug}` : ''}${tradeSlug ? `/${tradeSlug}` : ''}`
+}
+
+const workerSearchFromPath = (pathSlug: string): WorkerSearchState | null => {
+  const parts = pathSlug.split('/').filter(Boolean)
+  if (parts[0] !== 'szakemberek') {
+    return null
+  }
+
+  const [firstFilter, secondFilter] = parts.slice(1)
+  const firstCounty = firstFilter ? countySlugValuesBySlug[firstFilter] : ''
+  const firstTrade = firstFilter ? tradeLabelsBySlug[firstFilter] : ''
+  const secondTrade = secondFilter ? tradeLabelsBySlug[secondFilter] : ''
+
+  if (secondFilter) {
+    if (!firstCounty || !secondTrade) {
+      return null
+    }
+    return { county: firstCounty, trade: secondTrade }
+  }
+
+  if (firstCounty) {
+    return { county: firstCounty, trade: '' }
+  }
+  if (firstTrade) {
+    return { county: '', trade: firstTrade }
+  }
+  if (!firstFilter) {
+    return { county: '', trade: '' }
+  }
+
+  return null
+}
+
 const initialWorkers: WorkerCard[] = [
   {
     name: 'Gyors Csőszerviz',
@@ -514,6 +564,7 @@ const initialProblems: ProblemPost[] = [
 
 function App() {
   const [selectedWorker, setSelectedWorker] = useState<WorkerCard | null>(null)
+  const loadedWorkerSearchRoute = useRef('')
   const [selectedProblem, setSelectedProblem] = useState<ProblemPost | null>(null)
   const [isWorkerSearchPage, setIsWorkerSearchPage] = useState(false)
   const [isProblemSearchPage, setIsProblemSearchPage] = useState(false)
@@ -929,13 +980,13 @@ function App() {
     window.history.pushState(null, '', '/')
   }
 
-  const openWorkerSearchPage = (updatePath = true) => {
+  const openWorkerSearchPage = (updatePath = true, search = workerSearch) => {
     setSelectedWorker(null)
     setSelectedProblem(null)
     setIsProblemSearchPage(false)
     setIsWorkerSearchPage(true)
     if (updatePath) {
-      window.history.pushState(null, '', '/szakemberek')
+      window.history.pushState(null, '', workerSearchPath(search))
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -1197,7 +1248,15 @@ function App() {
   }
 
   useEffect(() => {
-    loadWorkers(workerSearch, true).catch(() => {
+    const initialPathSlug = window.location.pathname.replace(/^\/+|\/+$/g, '')
+    const initialWorkerSearch = workerSearchFromPath(initialPathSlug) ?? workerSearch
+    if (initialWorkerSearch.trade || initialWorkerSearch.county) {
+      setWorkerSearch(initialWorkerSearch)
+    }
+    if (workerSearchFromPath(initialPathSlug)) {
+      loadedWorkerSearchRoute.current = initialPathSlug
+    }
+    loadWorkers(initialWorkerSearch, true).catch(() => {
       setWorkerCards(initialWorkers)
     })
     loadWorkerRegistrationCount().catch(() => {
@@ -1224,10 +1283,31 @@ function App() {
       if (ignoredRouteSlugs.has(pathSlug)) {
         return
       }
-      if (pathSlug === 'szakemberek') {
+      const routeWorkerSearch = workerSearchFromPath(pathSlug)
+      if (routeWorkerSearch) {
         setSelectedWorker(null)
         setSelectedProblem(null)
-        openWorkerSearchPage(false)
+        setWorkerSearch(routeWorkerSearch)
+        openWorkerSearchPage(false, routeWorkerSearch)
+        if (loadedWorkerSearchRoute.current !== pathSlug) {
+          loadedWorkerSearchRoute.current = pathSlug
+          setWorkerSearchStatus('loading')
+          setWorkerSearchMessage('')
+          loadWorkers(routeWorkerSearch).then((results) => {
+            const hasFilters = Boolean(routeWorkerSearch.trade || routeWorkerSearch.county)
+            if (results.length === 0) {
+              setWorkerSearchMessage(
+                hasFilters
+                  ? 'Nincs találat erre a megyére és szakmára. Próbálj meg másik szűrést.'
+                  : 'Még nincs regisztrált szakember az adatbázisban.',
+              )
+            }
+            setWorkerSearchStatus('idle')
+          }).catch(() => {
+            setWorkerSearchStatus('error')
+            setWorkerSearchMessage('Nem sikerült betölteni a szakembereket. Ellenőrizd, hogy fut-e a backend.')
+          })
+        }
         return
       }
       if (pathSlug === 'munkak') {
@@ -1265,13 +1345,13 @@ function App() {
     } else if (selectedProblem) {
       canonicalPath = problemProfilePath(selectedProblem)
     } else if (isWorkerSearchPage) {
-      canonicalPath = '/szakemberek'
+      canonicalPath = workerSearchPath(workerSearch)
     } else if (isProblemSearchPage) {
       canonicalPath = '/munkak'
     }
 
     updateCanonicalLink(canonicalPath)
-  }, [selectedWorker, selectedProblem, isWorkerSearchPage, isProblemSearchPage])
+  }, [selectedWorker, selectedProblem, isWorkerSearchPage, isProblemSearchPage, workerSearch])
 
   useEffect(() => {
     if (!authToken) {
@@ -1508,7 +1588,7 @@ function App() {
 
     try {
       const results = await loadWorkers(workerSearch)
-      openWorkerSearchPage()
+      openWorkerSearchPage(true, workerSearch)
       const hasFilters = Boolean(workerSearch.trade || workerSearch.county)
       if (results.length === 0) {
         setWorkerSearchMessage(
@@ -1537,6 +1617,9 @@ function App() {
 
     try {
       await loadWorkers(emptySearch, true)
+      if (isWorkerSearchPage) {
+        window.history.pushState(null, '', '/szakemberek')
+      }
       setWorkerSearchStatus('idle')
     } catch {
       setWorkerCards(initialWorkers)
