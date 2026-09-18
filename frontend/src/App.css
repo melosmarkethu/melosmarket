@@ -286,6 +286,10 @@ button.header-action {
   cursor: pointer;
 }
 
+.mobile-hero-auth {
+  display: none;
+}
+
 .button.primary {
   color: #ffffff;
   background: var(--brand);
@@ -1746,6 +1750,10 @@ textarea:focus {
     gap: 8px;
   }
 
+  .header-auth-action {
+    display: none;
+  }
+
   .account-pill {
     max-width: none;
     width: 100%;
@@ -1782,6 +1790,23 @@ textarea:focus {
   .hero-section {
     gap: 28px;
     padding: 32px 20px;
+  }
+
+  .mobile-hero-auth {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .mobile-hero-auth .button {
+    width: 100%;
+  }
+
+  .mobile-hero-login .login-popover {
+    width: 100%;
+    margin-top: 0;
+    color: var(--text);
+    box-shadow: none;
   }
 
   .trust-strip {

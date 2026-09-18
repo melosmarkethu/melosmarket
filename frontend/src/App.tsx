@@ -3152,13 +3152,13 @@ function App() {
               </>
             ) : (
               <>
-                <a className="header-action" href="#problem" onClick={closeMobileMenu}>
+                <a className="header-action header-auth-action" href="#problem" onClick={closeMobileMenu}>
                   Regisztráció ügyfélként
                 </a>
-                <a className="header-action" href="#worker-signup" onClick={closeMobileMenu}>
+                <a className="header-action header-auth-action" href="#worker-signup" onClick={closeMobileMenu}>
                   Regisztráció szakemberként
                 </a>
-                <div className="login-popover-wrap">
+                <div className="login-popover-wrap header-auth-action">
                   <button
                     className="header-action"
                     type="button"
@@ -3399,6 +3399,188 @@ function App() {
 
       <section className="hero-section" id="top">
         <div className="hero-copy">
+          {!currentUser && (
+            <div className="mobile-hero-auth" aria-label="Fiók műveletek">
+              <a className="button secondary" href="#problem">
+                Regisztráció ügyfélként
+              </a>
+              <a className="button secondary" href="#worker-signup">
+                Regisztráció szakemberként
+              </a>
+              <button
+                className="button primary"
+                type="button"
+                aria-expanded={isLoginOpen}
+                onClick={() => {
+                  setIsLoginOpen((open) => !open)
+                  setLoginMessage('')
+                  setLoginState('idle')
+                  setPasswordResetMessage('')
+                  setPasswordResetState('idle')
+                  if (passwordResetView !== 'reset') {
+                    setPasswordResetView('login')
+                  }
+                }}
+              >
+                Belépés
+              </button>
+
+              {isLoginOpen && (
+                <div className="mobile-hero-login">
+                  {passwordResetView === 'login' && (
+                    <form className="login-popover" onSubmit={submitLogin}>
+                      <div className="admin-row-copy">
+                        <h3>Belépés</h3>
+                        <p>Ügyfélként a problémáidat, szakemberként a profilodat kezeled.</p>
+                      </div>
+                      <div className="field">
+                        <label htmlFor="hero-login-email">Email</label>
+                        <input
+                          id="hero-login-email"
+                          type="email"
+                          maxLength={255}
+                          placeholder="peter@example.hu"
+                          required
+                          value={loginForm.email}
+                          onChange={(event) => setLoginForm((current) => ({ ...current, email: event.target.value }))}
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="hero-login-password">Jelszó</label>
+                        <input
+                          id="hero-login-password"
+                          type="password"
+                          minLength={8}
+                          maxLength={200}
+                          required
+                          value={loginForm.password}
+                          onChange={(event) => setLoginForm((current) => ({ ...current, password: event.target.value }))}
+                        />
+                      </div>
+                      <button type="submit" className="button primary full-width" disabled={loginState === 'submitting'}>
+                        {loginState === 'submitting' ? 'Belépés...' : 'Belépés'}
+                      </button>
+                      <button
+                        className="text-button"
+                        type="button"
+                        onClick={() => {
+                          setPasswordResetView('request')
+                          setPasswordResetEmail(loginForm.email)
+                          setPasswordResetState('idle')
+                          setPasswordResetMessage('')
+                        }}
+                      >
+                        Elfelejtetted a jelszavad?
+                      </button>
+                      {loginMessage && (
+                        <p className={`form-message ${loginState === 'success' ? 'success' : 'error'}`} role="status">
+                          {loginMessage}
+                        </p>
+                      )}
+                    </form>
+                  )}
+
+                  {passwordResetView === 'request' && (
+                    <form className="login-popover" onSubmit={submitForgotPassword}>
+                      <div className="admin-row-copy">
+                        <h3>Elfelejtett jelszó</h3>
+                        <p>Add meg az email címedet, és küldünk egy linket az új jelszó megadásához.</p>
+                      </div>
+                      <div className="field">
+                        <label htmlFor="hero-password-reset-email">Email</label>
+                        <input
+                          id="hero-password-reset-email"
+                          type="email"
+                          maxLength={255}
+                          placeholder="peter@example.hu"
+                          required
+                          value={passwordResetEmail}
+                          onChange={(event) => setPasswordResetEmail(event.target.value)}
+                        />
+                      </div>
+                      <button type="submit" className="button primary full-width" disabled={passwordResetState === 'submitting'}>
+                        {passwordResetState === 'submitting' ? 'Küldés...' : 'Link küldése'}
+                      </button>
+                      <button
+                        className="text-button"
+                        type="button"
+                        onClick={() => {
+                          setPasswordResetView('login')
+                          setPasswordResetMessage('')
+                          setPasswordResetState('idle')
+                        }}
+                      >
+                        Vissza a belépéshez
+                      </button>
+                      {passwordResetMessage && (
+                        <p className={`form-message ${passwordResetState === 'success' ? 'success' : 'error'}`} role="status">
+                          {passwordResetMessage}
+                        </p>
+                      )}
+                    </form>
+                  )}
+
+                  {passwordResetView === 'reset' && (
+                    <form className="login-popover" onSubmit={submitResetPassword}>
+                      <div className="admin-row-copy">
+                        <h3>Új jelszó megadása</h3>
+                        <p>Adj meg egy új, legalább 8 karakter hosszú jelszót.</p>
+                      </div>
+                      <div className="field">
+                        <label htmlFor="hero-new-password">Új jelszó</label>
+                        <input
+                          id="hero-new-password"
+                          type="password"
+                          minLength={8}
+                          maxLength={200}
+                          required
+                          value={passwordResetForm.password}
+                          onChange={(event) =>
+                            setPasswordResetForm((current) => ({ ...current, password: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="hero-new-password-confirm">Új jelszó még egyszer</label>
+                        <input
+                          id="hero-new-password-confirm"
+                          type="password"
+                          minLength={8}
+                          maxLength={200}
+                          required
+                          value={passwordResetForm.passwordConfirm}
+                          onChange={(event) =>
+                            setPasswordResetForm((current) => ({ ...current, passwordConfirm: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <button type="submit" className="button primary full-width" disabled={passwordResetState === 'submitting'}>
+                        {passwordResetState === 'submitting' ? 'Mentés...' : 'Új jelszó mentése'}
+                      </button>
+                      {passwordResetState === 'success' && (
+                        <button
+                          className="text-button"
+                          type="button"
+                          onClick={() => {
+                            setPasswordResetView('login')
+                            setPasswordResetMessage('')
+                            setPasswordResetState('idle')
+                          }}
+                        >
+                          Belépés az új jelszóval
+                        </button>
+                      )}
+                      {passwordResetMessage && (
+                        <p className={`form-message ${passwordResetState === 'success' ? 'success' : 'error'}`} role="status">
+                          {passwordResetMessage}
+                        </p>
+                      )}
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <p className="eyebrow">Helyi szakemberek, felesleges találgatás nélkül</p>
           <h1>Találj megbízható szakembert javításhoz, felújításhoz és sürgős munkákhoz.</h1>
           <p className="hero-text">
