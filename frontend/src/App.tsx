@@ -3071,9 +3071,15 @@ function App() {
   return (
     <main className="page-shell">
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Melos Market főoldal">
-          <img className="brand-logo" src="/melosmarket-logo.png" alt="Melos Market" />
-        </a>
+        <div className="brand-stack">
+          <a className="brand" href="#top" aria-label="Melos Market főoldal">
+            <img className="brand-logo" src="/melosmarket-logo.png" alt="Melos Market" />
+          </a>
+          <p className="header-prize-note">
+            <span aria-hidden="true">🎁</span>
+            Regisztrálj és nyerd meg a 100 000 Ft-os OBI utalványt
+          </p>
+        </div>
 
         <button
           className="mobile-menu-toggle"

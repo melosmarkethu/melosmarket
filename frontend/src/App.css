@@ -89,6 +89,12 @@
   text-decoration: none;
 }
 
+.brand-stack {
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+}
+
 .brand-logo {
   display: block;
   width: min(250px, 30vw);
@@ -98,6 +104,22 @@
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 10px 24px rgba(22, 47, 37, 0.07);
+}
+
+.header-prize-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: #c01818;
+  background: rgba(254, 242, 242, 0.92);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.2;
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.08);
 }
 
 .brand-button {
@@ -1689,6 +1711,16 @@ textarea:focus {
   .brand-logo {
     width: min(210px, 58vw);
     padding: 5px 8px;
+  }
+
+  .brand-stack {
+    max-width: calc(100% - 58px);
+  }
+
+  .header-prize-note {
+    max-width: 100%;
+    border-radius: 8px;
+    font-size: 0.78rem;
   }
 
   .mobile-menu-toggle {
