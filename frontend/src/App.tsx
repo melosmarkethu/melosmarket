@@ -3689,6 +3689,30 @@ function App() {
         </div>
       </section>
 
+      <section className="section-block" id="workers">
+        <div className="section-heading">
+          <div>
+            <p className="section-kicker">Kiemelt szakemberek</p>
+            <h2>Böngéssz helyi, megbízható szakemberek között.</h2>
+          </div>
+          <a
+            href="/szakemberek"
+            onClick={(event) => {
+              event.preventDefault()
+              openWorkerSearchPage()
+            }}
+          >
+            Összes szakember
+          </a>
+        </div>
+
+        {renderWorkerGrid(
+          highlightedWorkers,
+          'Még nincs kiemelt szakember',
+          'Az admin felületen Top szakember jelöléssel lehet szakembert kiemelni a főoldalra.',
+        )}
+      </section>
+
       <section className="content-grid">
         <div className="problem-panel" id="problem">
           <p className="section-kicker">Ügyfeleknek</p>
@@ -3956,30 +3980,6 @@ function App() {
             </li>
           </ol>
         </div>
-      </section>
-
-      <section className="section-block" id="workers">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">Kiemelt szakemberek</p>
-            <h2>Böngéssz helyi, megbízható szakemberek között.</h2>
-          </div>
-          <a
-            href="/szakemberek"
-            onClick={(event) => {
-              event.preventDefault()
-              openWorkerSearchPage()
-            }}
-          >
-            Összes szakember
-          </a>
-        </div>
-
-        {renderWorkerGrid(
-          highlightedWorkers,
-          'Még nincs kiemelt szakember',
-          'Az admin felületen Top szakember jelöléssel lehet szakembert kiemelni a főoldalra.',
-        )}
       </section>
 
       <section className="section-block jobs-section" id="jobs">
