@@ -258,6 +258,12 @@ const externalUrl = (value?: string) => {
 
 const phoneHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`
 
+const PhoneHandsetIcon = () => (
+  <svg className="phone-handset-icon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.78 19.78 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.78 19.78 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.89.32 1.76.59 2.6a2 2 0 0 1-.45 2.11L8 9.68a16 16 0 0 0 6.32 6.32l1.25-1.25a2 2 0 0 1 2.11-.45c.84.27 1.71.47 2.6.59A2 2 0 0 1 22 16.92z" />
+  </svg>
+)
+
 const workerProfileSlug = (worker: WorkerCard) => {
   const nameSlug = slugify(worker.name) || 'szakember'
   const tradeSlug = worker.trade === 'Nincs megadva' ? 'nincs-megadva' : slugify(worker.trade) || 'nincs-megadva'
@@ -2129,7 +2135,9 @@ function App() {
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => event.stopPropagation()}
                 >
-                  <span className="phone-icon" aria-hidden="true">☎</span>
+                  <span className="phone-icon" aria-hidden="true">
+                    <PhoneHandsetIcon />
+                  </span>
                   <span>{worker.phone}</span>
                 </a>
               )}
@@ -2472,7 +2480,9 @@ function App() {
                   <h1>{selectedWorker.name}</h1>
                   {selectedWorker.phone && (
                     <a className="phone-link profile-phone-link" href={phoneHref(selectedWorker.phone)}>
-                      <span className="phone-icon" aria-hidden="true">☎</span>
+                      <span className="phone-icon" aria-hidden="true">
+                        <PhoneHandsetIcon />
+                      </span>
                       <span>{selectedWorker.phone}</span>
                     </a>
                   )}
@@ -2565,7 +2575,9 @@ function App() {
                   <dt>Telefon</dt>
                   <dd>
                     <a className="phone-link details-phone-link" href={phoneHref(selectedWorker.phone)}>
-                      <span className="phone-icon" aria-hidden="true">☎</span>
+                      <span className="phone-icon" aria-hidden="true">
+                        <PhoneHandsetIcon />
+                      </span>
                       <span>{selectedWorker.phone}</span>
                     </a>
                   </dd>
