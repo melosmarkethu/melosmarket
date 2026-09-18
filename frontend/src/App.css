@@ -89,12 +89,6 @@
   text-decoration: none;
 }
 
-.brand-stack {
-  display: grid;
-  gap: 7px;
-  justify-items: start;
-}
-
 .brand-logo {
   display: block;
   width: min(250px, 30vw);
@@ -110,7 +104,8 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin: 0;
+  width: fit-content;
+  margin: -14px auto 24px;
   border: 1px solid rgba(220, 38, 38, 0.16);
   border-radius: 999px;
   padding: 7px 11px;
@@ -1708,10 +1703,6 @@ textarea:focus {
     padding-bottom: 18px;
   }
 
-  .brand-stack {
-    display: contents;
-  }
-
   .brand {
     order: 0;
   }
@@ -1725,6 +1716,7 @@ textarea:focus {
     order: 2;
     max-width: 100%;
     width: 100%;
+    margin: 0;
     justify-content: center;
     border-radius: 8px;
     font-size: 0.78rem;

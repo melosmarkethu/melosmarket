@@ -3071,15 +3071,9 @@ function App() {
   return (
     <main className="page-shell">
       <header className="site-header">
-        <div className="brand-stack">
-          <a className="brand" href="#top" aria-label="Melos Market főoldal">
-            <img className="brand-logo" src="/melosmarket-logo.png" alt="Melos Market" />
-          </a>
-          <p className="header-prize-note">
-            <span aria-hidden="true">🎁</span>
-            Regisztrálj és nyerd meg a 100 000 Ft-os OBI utalványt
-          </p>
-        </div>
+        <a className="brand" href="#top" aria-label="Melos Market főoldal">
+          <img className="brand-logo" src="/melosmarket-logo.png" alt="Melos Market" />
+        </a>
 
         <button
           className="mobile-menu-toggle"
@@ -3356,6 +3350,11 @@ function App() {
             )}
           </div>
       </header>
+
+      <p className="header-prize-note">
+        <span aria-hidden="true">🎁</span>
+        Regisztrálj és nyerd meg a 100 000 Ft-os OBI utalványt
+      </p>
 
       {verificationModalOpen && (
         <div className="modal-backdrop" role="presentation">
