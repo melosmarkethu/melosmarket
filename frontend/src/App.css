@@ -769,6 +769,12 @@ textarea:focus {
   margin: 18px 0 10px;
 }
 
+.worker-card-name {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
 .worker-card-avatar {
   display: grid;
   width: 44px;
@@ -855,6 +861,52 @@ textarea:focus {
 
 .worker-card-title h3 {
   margin: 0;
+}
+
+.phone-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  color: #0f7a3b;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.phone-link:hover,
+.phone-link:focus-visible {
+  color: #0b5f2d;
+  text-decoration: underline;
+}
+
+.phone-icon {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #16a34a;
+  font-size: 0.9rem;
+  box-shadow: 0 0 0 rgba(22, 163, 74, 0.46);
+  animation: phone-pulse 1.35s ease-in-out infinite;
+}
+
+.worker-phone-link {
+  font-size: 0.92rem;
+}
+
+@keyframes phone-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.44);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+    transform: scale(1.08);
+  }
 }
 
 .worker-card p {
@@ -1220,6 +1272,25 @@ textarea:focus {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+}
+
+.profile-name-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-phone-link {
+  color: #ffffff;
+  font-size: 1.08rem;
+}
+
+.profile-phone-link:hover,
+.profile-phone-link:focus-visible {
+  color: #dcfce7;
+}
+
+.details-phone-link {
+  color: var(--brand);
 }
 
 .profile-social-links {

@@ -256,6 +256,8 @@ const externalUrl = (value?: string) => {
   return /^https?:\/\//i.test(value) ? value : `https://${value}`
 }
 
+const phoneHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`
+
 const workerProfileSlug = (worker: WorkerCard) => {
   const nameSlug = slugify(worker.name) || 'szakember'
   const tradeSlug = worker.trade === 'Nincs megadva' ? 'nincs-megadva' : slugify(worker.trade) || 'nincs-megadva'
@@ -2091,7 +2093,19 @@ function App() {
   const renderWorkerGrid = (workers: WorkerCard[], emptyTitle: string, emptyDescription: string) => (
     <div className="worker-grid">
       {workers.length > 0 ? workers.map((worker) => (
-        <button className="worker-card worker-card-button" key={worker.id ?? worker.name} onClick={() => openWorkerProfile(worker)}>
+        <article
+          className="worker-card worker-card-button"
+          key={worker.id ?? worker.name}
+          role="button"
+          tabIndex={0}
+          onClick={() => openWorkerProfile(worker)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              openWorkerProfile(worker)
+            }
+          }}
+        >
           <div className="worker-card-top">
             <span className="trade-pill">{worker.trade}</span>
             <span className={worker.verified ? 'verified-badge compact' : 'rating'}>
@@ -2106,7 +2120,20 @@ function App() {
                 <span>{worker.name.charAt(0).toUpperCase()}</span>
               )}
             </div>
-            <h3>{worker.name}</h3>
+            <div className="worker-card-name">
+              <h3>{worker.name}</h3>
+              {worker.phone && (
+                <a
+                  className="phone-link worker-phone-link"
+                  href={phoneHref(worker.phone)}
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  <span className="phone-icon" aria-hidden="true">☎</span>
+                  <span>{worker.phone}</span>
+                </a>
+              )}
+            </div>
           </div>
           {activeWorkerBadges(worker).length > 0 && (
             <div className="worker-card-badges">
@@ -2120,7 +2147,7 @@ function App() {
             <span>{worker.county}</span>
             <span>{worker.area}</span>
           </div>
-        </button>
+        </article>
       )) : (
         <div className="empty-results">
           <h3>{emptyTitle}</h3>
@@ -2441,7 +2468,15 @@ function App() {
                 <img className="profile-avatar" src={selectedWorker.profileImageUrl} alt={`${selectedWorker.name} profilképe`} />
               )}
               <div className="profile-title-row">
-                <h1>{selectedWorker.name}</h1>
+                <div className="profile-name-stack">
+                  <h1>{selectedWorker.name}</h1>
+                  {selectedWorker.phone && (
+                    <a className="phone-link profile-phone-link" href={phoneHref(selectedWorker.phone)}>
+                      <span className="phone-icon" aria-hidden="true">☎</span>
+                      <span>{selectedWorker.phone}</span>
+                    </a>
+                  )}
+                </div>
                 {selectedWorker.verified && (
                   <span className="verified-checkmark" aria-label="Ellenőrzött szakember" title="Ellenőrzött szakember">
                     ✓
@@ -2528,7 +2563,12 @@ function App() {
               {selectedWorker.phone && (
                 <div>
                   <dt>Telefon</dt>
-                  <dd>{selectedWorker.phone}</dd>
+                  <dd>
+                    <a className="phone-link details-phone-link" href={phoneHref(selectedWorker.phone)}>
+                      <span className="phone-icon" aria-hidden="true">☎</span>
+                      <span>{selectedWorker.phone}</span>
+                    </a>
+                  </dd>
                 </div>
               )}
               {selectedWorker.taxNumber && (
