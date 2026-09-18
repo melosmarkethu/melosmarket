@@ -7,9 +7,11 @@ import com.melosmarket.api.customer.persistence.CustomerEntity;
 import com.melosmarket.api.customer.persistence.CustomerRepository;
 import com.melosmarket.api.generated.model.AuthResponse;
 import com.melosmarket.api.generated.model.CurrentUser;
+import com.melosmarket.api.generated.model.ForgotPasswordRequest;
 import com.melosmarket.api.generated.model.LoginRequest;
 import com.melosmarket.api.generated.model.RegisterCustomerRequest;
 import com.melosmarket.api.generated.model.RegisterWorkerRequest;
+import com.melosmarket.api.generated.model.ResetPasswordRequest;
 import com.melosmarket.api.generated.model.UserRole;
 import com.melosmarket.api.generated.model.VerifyEmailRequest;
 import com.melosmarket.api.generated.model.Worker;
@@ -30,6 +32,7 @@ public class AuthService {
     private final WorkerService workerService;
     private final CustomerRepository customerRepository;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
     public AuthService(
             UserRepository userRepository,
@@ -38,7 +41,8 @@ public class AuthService {
             AuthContext authContext,
             WorkerService workerService,
             CustomerRepository customerRepository,
-            EmailVerificationService emailVerificationService) {
+            EmailVerificationService emailVerificationService,
+            PasswordResetService passwordResetService) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.jwtService = jwtService;
@@ -46,6 +50,7 @@ public class AuthService {
         this.workerService = workerService;
         this.customerRepository = customerRepository;
         this.emailVerificationService = emailVerificationService;
+        this.passwordResetService = passwordResetService;
     }
 
     @Transactional
@@ -94,6 +99,16 @@ public class AuthService {
 
         Worker worker = user.getRole() == AccountRole.WORKER ? workerService.getWorkerForUser(user.getId()) : null;
         return authResponse(user, worker);
+    }
+
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        passwordResetService.requestPasswordReset(request.getEmail());
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getPassword());
     }
 
     @Transactional(readOnly = true)

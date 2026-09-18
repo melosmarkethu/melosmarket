@@ -170,6 +170,40 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      operationId: forgotPassword
+      summary: Request a password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '204':
+          description: Password reset email sent if the account exists.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /auth/reset-password:
+    post:
+      tags:
+        - Auth
+      operationId: resetPassword
+      summary: Reset account password with a token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '204':
+          description: Password reset.
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /auth/registered-users/count:
     get:
       tags:
@@ -852,6 +886,29 @@ components:
           type: string
           format: email
           maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 200
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - password
+      properties:
+        token:
+          type: string
+          minLength: 20
+          maxLength: 160
         password:
           type: string
           minLength: 8

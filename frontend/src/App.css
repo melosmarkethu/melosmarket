@@ -219,6 +219,10 @@ button.header-action {
   font-size: 0.92rem;
 }
 
+.login-popover .text-button {
+  justify-self: center;
+}
+
 .hero-section {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);

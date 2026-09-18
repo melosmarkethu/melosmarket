@@ -180,6 +180,11 @@ type LoginFormState = {
   password: string
 }
 
+type PasswordResetFormState = {
+  password: string
+  passwordConfirm: string
+}
+
 type WorkerProfileEditState = {
   businessName: string
   contactName: string
@@ -514,6 +519,15 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [loginState, setLoginState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [loginMessage, setLoginMessage] = useState('')
+  const [passwordResetView, setPasswordResetView] = useState<'login' | 'request' | 'reset'>('login')
+  const [passwordResetEmail, setPasswordResetEmail] = useState('')
+  const [passwordResetToken, setPasswordResetToken] = useState('')
+  const [passwordResetForm, setPasswordResetForm] = useState<PasswordResetFormState>({
+    password: '',
+    passwordConfirm: '',
+  })
+  const [passwordResetState, setPasswordResetState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [passwordResetMessage, setPasswordResetMessage] = useState('')
   const [verificationModalOpen, setVerificationModalOpen] = useState(false)
   const [verificationState, setVerificationState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [verificationMessage, setVerificationMessage] = useState('')
@@ -729,6 +743,11 @@ function App() {
     setIsLoginOpen(false)
     setIsMobileMenuOpen(false)
     setLoginMessage('')
+    setPasswordResetView('login')
+    setPasswordResetMessage('')
+    setPasswordResetState('idle')
+    setPasswordResetToken('')
+    setPasswordResetForm({ password: '', passwordConfirm: '' })
     setVerificationModalOpen(false)
     setVerificationMessage('')
     setVerificationState('idle')
@@ -1311,6 +1330,19 @@ function App() {
       })
   }, [])
 
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('passwordResetToken')
+    if (!token) {
+      return
+    }
+
+    setPasswordResetToken(token)
+    setPasswordResetView('reset')
+    setPasswordResetState('idle')
+    setPasswordResetMessage('Adj meg egy új jelszót a fiókodhoz.')
+    setIsLoginOpen(true)
+  }, [])
+
   const resendVerificationEmail = async () => {
     setVerificationState('submitting')
     setVerificationMessage('')
@@ -1358,6 +1390,70 @@ function App() {
     } catch {
       setLoginState('error')
       setLoginMessage('Nem sikerült bejelentkezni. Ellenőrizd az email címet és a jelszót.')
+    }
+  }
+
+  const submitForgotPassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setPasswordResetState('submitting')
+    setPasswordResetMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: passwordResetEmail }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Forgot password failed with status ${response.status}`)
+      }
+
+      setPasswordResetState('success')
+      setPasswordResetMessage('Ha létezik ilyen email című fiók, elküldtük a jelszó visszaállító linket.')
+    } catch {
+      setPasswordResetState('error')
+      setPasswordResetMessage('Nem sikerült elküldeni a jelszó visszaállító emailt. Próbáld újra később.')
+    }
+  }
+
+  const submitResetPassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setPasswordResetState('submitting')
+    setPasswordResetMessage('')
+
+    if (passwordResetForm.password !== passwordResetForm.passwordConfirm) {
+      setPasswordResetState('error')
+      setPasswordResetMessage('A két jelszó nem egyezik.')
+      return
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: passwordResetToken,
+          password: passwordResetForm.password,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Reset password failed with status ${response.status}`)
+      }
+
+      setPasswordResetState('success')
+      setPasswordResetMessage('Sikeresen módosítottad a jelszavadat. Most már be tudsz lépni az új jelszóval.')
+      setPasswordResetToken('')
+      setPasswordResetForm({ password: '', passwordConfirm: '' })
+      window.history.replaceState(null, '', window.location.pathname)
+    } catch {
+      setPasswordResetState('error')
+      setPasswordResetMessage('Nem sikerült módosítani a jelszót. Lehet, hogy a link lejárt vagy már fel lett használva.')
     }
   }
 
@@ -3019,50 +3115,183 @@ function App() {
                       setIsLoginOpen((open) => !open)
                       setLoginMessage('')
                       setLoginState('idle')
+                      setPasswordResetMessage('')
+                      setPasswordResetState('idle')
+                      if (passwordResetView !== 'reset') {
+                        setPasswordResetView('login')
+                      }
                     }}
                   >
                     Belépés
                   </button>
 
                   {isLoginOpen && (
-                    <form className="login-popover" onSubmit={submitLogin}>
-                      <div className="admin-row-copy">
-                        <h3>Belépés</h3>
-                        <p>Ügyfélként a problémáidat, szakemberként a profilodat kezeled.</p>
-                      </div>
-                      <div className="field">
-                        <label htmlFor="login-email">Email</label>
-                        <input
-                          id="login-email"
-                          type="email"
-                          maxLength={255}
-                          placeholder="peter@example.hu"
-                          required
-                          value={loginForm.email}
-                          onChange={(event) => setLoginForm((current) => ({ ...current, email: event.target.value }))}
-                        />
-                      </div>
-                      <div className="field">
-                        <label htmlFor="login-password">Jelszó</label>
-                        <input
-                          id="login-password"
-                          type="password"
-                          minLength={8}
-                          maxLength={200}
-                          required
-                          value={loginForm.password}
-                          onChange={(event) => setLoginForm((current) => ({ ...current, password: event.target.value }))}
-                        />
-                      </div>
-                      <button type="submit" className="button primary full-width" disabled={loginState === 'submitting'}>
-                        {loginState === 'submitting' ? 'Belépés...' : 'Belépés'}
-                      </button>
-                      {loginMessage && (
-                        <p className={`form-message ${loginState === 'success' ? 'success' : 'error'}`} role="status">
-                          {loginMessage}
-                        </p>
+                    <>
+                      {passwordResetView === 'login' && (
+                        <form className="login-popover" onSubmit={submitLogin}>
+                          <div className="admin-row-copy">
+                            <h3>Belépés</h3>
+                            <p>Ügyfélként a problémáidat, szakemberként a profilodat kezeled.</p>
+                          </div>
+                          <div className="field">
+                            <label htmlFor="login-email">Email</label>
+                            <input
+                              id="login-email"
+                              type="email"
+                              maxLength={255}
+                              placeholder="peter@example.hu"
+                              required
+                              value={loginForm.email}
+                              onChange={(event) => setLoginForm((current) => ({ ...current, email: event.target.value }))}
+                            />
+                          </div>
+                          <div className="field">
+                            <label htmlFor="login-password">Jelszó</label>
+                            <input
+                              id="login-password"
+                              type="password"
+                              minLength={8}
+                              maxLength={200}
+                              required
+                              value={loginForm.password}
+                              onChange={(event) => setLoginForm((current) => ({ ...current, password: event.target.value }))}
+                            />
+                          </div>
+                          <button type="submit" className="button primary full-width" disabled={loginState === 'submitting'}>
+                            {loginState === 'submitting' ? 'Belépés...' : 'Belépés'}
+                          </button>
+                          <button
+                            className="text-button"
+                            type="button"
+                            onClick={() => {
+                              setPasswordResetView('request')
+                              setPasswordResetEmail(loginForm.email)
+                              setPasswordResetState('idle')
+                              setPasswordResetMessage('')
+                            }}
+                          >
+                            Elfelejtetted a jelszavad?
+                          </button>
+                          {loginMessage && (
+                            <p className={`form-message ${loginState === 'success' ? 'success' : 'error'}`} role="status">
+                              {loginMessage}
+                            </p>
+                          )}
+                        </form>
                       )}
-                    </form>
+
+                      {passwordResetView === 'request' && (
+                        <form className="login-popover" onSubmit={submitForgotPassword}>
+                          <div className="admin-row-copy">
+                            <h3>Elfelejtett jelszó</h3>
+                            <p>Add meg az email címedet, és küldünk egy linket az új jelszó megadásához.</p>
+                          </div>
+                          <div className="field">
+                            <label htmlFor="password-reset-email">Email</label>
+                            <input
+                              id="password-reset-email"
+                              type="email"
+                              maxLength={255}
+                              placeholder="peter@example.hu"
+                              required
+                              value={passwordResetEmail}
+                              onChange={(event) => setPasswordResetEmail(event.target.value)}
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="button primary full-width"
+                            disabled={passwordResetState === 'submitting'}
+                          >
+                            {passwordResetState === 'submitting' ? 'Küldés...' : 'Link küldése'}
+                          </button>
+                          <button
+                            className="text-button"
+                            type="button"
+                            onClick={() => {
+                              setPasswordResetView('login')
+                              setPasswordResetMessage('')
+                              setPasswordResetState('idle')
+                            }}
+                          >
+                            Vissza a belépéshez
+                          </button>
+                          {passwordResetMessage && (
+                            <p
+                              className={`form-message ${passwordResetState === 'success' ? 'success' : 'error'}`}
+                              role="status"
+                            >
+                              {passwordResetMessage}
+                            </p>
+                          )}
+                        </form>
+                      )}
+
+                      {passwordResetView === 'reset' && (
+                        <form className="login-popover" onSubmit={submitResetPassword}>
+                          <div className="admin-row-copy">
+                            <h3>Új jelszó megadása</h3>
+                            <p>Adj meg egy új, legalább 8 karakter hosszú jelszót.</p>
+                          </div>
+                          <div className="field">
+                            <label htmlFor="new-password">Új jelszó</label>
+                            <input
+                              id="new-password"
+                              type="password"
+                              minLength={8}
+                              maxLength={200}
+                              required
+                              value={passwordResetForm.password}
+                              onChange={(event) =>
+                                setPasswordResetForm((current) => ({ ...current, password: event.target.value }))
+                              }
+                            />
+                          </div>
+                          <div className="field">
+                            <label htmlFor="new-password-confirm">Új jelszó még egyszer</label>
+                            <input
+                              id="new-password-confirm"
+                              type="password"
+                              minLength={8}
+                              maxLength={200}
+                              required
+                              value={passwordResetForm.passwordConfirm}
+                              onChange={(event) =>
+                                setPasswordResetForm((current) => ({ ...current, passwordConfirm: event.target.value }))
+                              }
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="button primary full-width"
+                            disabled={passwordResetState === 'submitting'}
+                          >
+                            {passwordResetState === 'submitting' ? 'Mentés...' : 'Új jelszó mentése'}
+                          </button>
+                          {passwordResetState === 'success' && (
+                            <button
+                              className="text-button"
+                              type="button"
+                              onClick={() => {
+                                setPasswordResetView('login')
+                                setPasswordResetMessage('')
+                                setPasswordResetState('idle')
+                              }}
+                            >
+                              Belépés az új jelszóval
+                            </button>
+                          )}
+                          {passwordResetMessage && (
+                            <p
+                              className={`form-message ${passwordResetState === 'success' ? 'success' : 'error'}`}
+                              role="status"
+                            >
+                              {passwordResetMessage}
+                            </p>
+                          )}
+                        </form>
+                      )}
+                    </>
                   )}
                 </div>
               </>

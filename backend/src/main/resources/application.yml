@@ -44,6 +44,7 @@ melosmarket:
   email:
     from: ${MELOSMARKET_EMAIL_FROM:melosmarket.hu@gmail.com}
     verification-valid-hours: ${MELOSMARKET_EMAIL_VERIFICATION_VALID_HOURS:24}
+    password-reset-valid-hours: ${MELOSMARKET_PASSWORD_RESET_VALID_HOURS:2}
 
 server:
   port: ${SERVER_PORT:8080}

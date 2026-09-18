@@ -3,9 +3,11 @@ package com.melosmarket.api.auth;
 import com.melosmarket.api.generated.AuthApi;
 import com.melosmarket.api.generated.model.AuthResponse;
 import com.melosmarket.api.generated.model.CurrentUser;
+import com.melosmarket.api.generated.model.ForgotPasswordRequest;
 import com.melosmarket.api.generated.model.LoginRequest;
 import com.melosmarket.api.generated.model.RegisterCustomerRequest;
 import com.melosmarket.api.generated.model.RegisterWorkerRequest;
+import com.melosmarket.api.generated.model.ResetPasswordRequest;
 import com.melosmarket.api.generated.model.VerifyEmailRequest;
 
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,18 @@ public class AuthController implements AuthApi {
     @Override
     public ResponseEntity<AuthResponse> login(LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.login(loginRequest));
+    }
+
+    @Override
+    public ResponseEntity<Void> forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
+        authService.forgotPassword(forgotPasswordRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> resetPassword(ResetPasswordRequest resetPasswordRequest) {
+        authService.resetPassword(resetPasswordRequest);
+        return ResponseEntity.noContent().build();
     }
 
     @Override
