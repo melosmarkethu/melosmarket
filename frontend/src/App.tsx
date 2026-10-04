@@ -1628,6 +1628,31 @@ function App() {
     }
   }
 
+  const navigateWorkerSearch = async (search: WorkerSearchState) => {
+    setWorkerSearch(search)
+    setWorkerSearchMessage('')
+    setWorkerSearchStatus('loading')
+
+    try {
+      const results = await loadWorkers(search)
+      openWorkerSearchPage(true, search)
+      const hasFilters = Boolean(search.trade || search.county)
+      if (results.length === 0) {
+        setWorkerSearchMessage(
+          hasFilters
+            ? 'Nincs találat erre a megyére és szakmára. Próbálj meg másik szűrést.'
+            : 'Még nincs regisztrált szakember az adatbázisban.',
+        )
+      } else {
+        setWorkerSearchMessage(`${results.length} szakember található a megadott szűrésre.`)
+      }
+      setWorkerSearchStatus('idle')
+    } catch {
+      setWorkerSearchStatus('error')
+      setWorkerSearchMessage('Nem sikerült betölteni a szakembereket. Ellenőrizd, hogy fut-e a backend.')
+    }
+  }
+
   const submitProblemSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setProblemSearchStatus('loading')
@@ -2210,7 +2235,19 @@ function App() {
               )}
             </div>
             <div className="worker-card-name">
-              <h3>{worker.name}</h3>
+              <h3>
+                <a
+                  className="worker-card-profile-link"
+                  href={workerProfilePath(worker)}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    openWorkerProfile(worker)
+                  }}
+                >
+                  {worker.name}
+                </a>
+              </h3>
               {worker.phone && (
                 <a
                   className="phone-link worker-phone-link"
@@ -3043,6 +3080,84 @@ function App() {
               {workerSearchMessage}
             </p>
           )}
+
+          <div className="seo-links-panel" aria-label="Gyakori szakember keresések">
+            <div>
+              <h2>Megye szerinti keresések</h2>
+              <div className="seo-link-list">
+                {counties.map((county) => {
+                  const search = { county: county.value, trade: '' }
+                  return (
+                    <a
+                      key={county.value}
+                      href={workerSearchPath(search)}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        navigateWorkerSearch(search).catch(() => undefined)
+                      }}
+                    >
+                      Szakemberek {county.label}
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h2>Szakma szerinti keresések</h2>
+              <div className="seo-link-list">
+                {trades.map((trade) => {
+                  const search = { county: '', trade }
+                  return (
+                    <a
+                      key={trade}
+                      href={workerSearchPath(search)}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        navigateWorkerSearch(search).catch(() => undefined)
+                      }}
+                    >
+                      {trade}
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+
+            {(workerSearch.county || workerSearch.trade) && (
+              <div>
+                <h2>
+                  {workerSearch.county && workerSearch.trade
+                    ? 'Kapcsolódó keresések'
+                    : workerSearch.county
+                      ? `${countyLabelsByApiValue[workerSearch.county]} szakmái`
+                      : `${workerSearch.trade} megyék szerint`}
+                </h2>
+                <div className="seo-link-list">
+                  {(workerSearch.county ? trades : counties.map((county) => county.label)).map((item) => {
+                    const search = workerSearch.county
+                      ? { county: workerSearch.county, trade: item }
+                      : { county: countyApiValuesByLabel[item] ?? '', trade: workerSearch.trade }
+                    return (
+                      <a
+                        key={item}
+                        href={workerSearchPath(search)}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          navigateWorkerSearch(search).catch(() => undefined)
+                        }}
+                      >
+                        {workerSearch.county
+                          ? `${item} ${countyLabelsByApiValue[workerSearch.county]}`
+                          : `${workerSearch.trade} ${item}`}
+                      </a>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+          </div>
 
           {renderWorkerGrid(
             workerCards,
