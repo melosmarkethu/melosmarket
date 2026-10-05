@@ -3087,7 +3087,8 @@ function App() {
             </p>
           )}
 
-          <div className="seo-links-panel" aria-label="Gyakori szakember keresések">
+          <details className="seo-links-panel" aria-label="Gyakori szakember keresések">
+            <summary>További keresések</summary>
             <div>
               <h2>Megye szerinti keresések</h2>
               <div className="seo-link-list">
@@ -3163,7 +3164,7 @@ function App() {
               </div>
             )}
 
-          </div>
+          </details>
 
           {renderWorkerGrid(
             workerCards,
