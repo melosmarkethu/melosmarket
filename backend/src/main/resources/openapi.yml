@@ -847,6 +847,7 @@ components:
       enum:
         - WORKER
         - CUSTOMER
+        - SUPPLIER
         - ADMIN
     CurrentUser:
       type: object

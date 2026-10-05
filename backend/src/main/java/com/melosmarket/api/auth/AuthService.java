@@ -15,6 +15,8 @@ import com.melosmarket.api.generated.model.ResetPasswordRequest;
 import com.melosmarket.api.generated.model.UserRole;
 import com.melosmarket.api.generated.model.VerifyEmailRequest;
 import com.melosmarket.api.generated.model.Worker;
+import com.melosmarket.api.supplier.RegisterSupplierRequest;
+import com.melosmarket.api.supplier.SupplierService;
 import com.melosmarket.api.worker.WorkerService;
 
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,7 @@ public class AuthService {
     private final CustomerRepository customerRepository;
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
+    private final SupplierService supplierService;
 
     public AuthService(
             UserRepository userRepository,
@@ -42,7 +45,8 @@ public class AuthService {
             WorkerService workerService,
             CustomerRepository customerRepository,
             EmailVerificationService emailVerificationService,
-            PasswordResetService passwordResetService) {
+            PasswordResetService passwordResetService,
+            SupplierService supplierService) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.jwtService = jwtService;
@@ -51,6 +55,7 @@ public class AuthService {
         this.customerRepository = customerRepository;
         this.emailVerificationService = emailVerificationService;
         this.passwordResetService = passwordResetService;
+        this.supplierService = supplierService;
     }
 
     @Transactional
@@ -84,6 +89,23 @@ public class AuthService {
         user.setEmailVerified(false);
         UserEntity savedUser = userRepository.save(user);
         ensureCustomerProfile(savedUser.getEmail());
+        emailVerificationService.sendVerificationEmail(savedUser);
+        return authResponse(savedUser, null);
+    }
+
+    @Transactional
+    public AuthResponse registerSupplier(RegisterSupplierRequest request) {
+        if (userRepository.existsByEmailIgnoreCase(request.email())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
+        }
+
+        UserEntity user = new UserEntity();
+        user.setEmail(request.email().trim().toLowerCase());
+        user.setPasswordHash(passwordHasher.hash(request.password()));
+        user.setRole(AccountRole.SUPPLIER);
+        user.setEmailVerified(false);
+        UserEntity savedUser = userRepository.save(user);
+        supplierService.createOwnedSupplier(request, savedUser);
         emailVerificationService.sendVerificationEmail(savedUser);
         return authResponse(savedUser, null);
     }

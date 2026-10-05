@@ -15,16 +15,22 @@ public class WebConfig implements WebMvcConfigurer {
     private final Path workerReferencesDir;
     private final Path workerProfileImagesDir;
     private final Path problemImagesDir;
+    private final Path supplierImagesDir;
+    private final Path supplierPromotionImagesDir;
     private final String[] allowedOrigins;
 
     public WebConfig(
             @Value("${melosmarket.uploads.worker-references-dir}") String workerReferencesDir,
             @Value("${melosmarket.uploads.worker-profile-images-dir}") String workerProfileImagesDir,
             @Value("${melosmarket.uploads.problem-images-dir}") String problemImagesDir,
+            @Value("${melosmarket.uploads.supplier-images-dir}") String supplierImagesDir,
+            @Value("${melosmarket.uploads.supplier-promotion-images-dir}") String supplierPromotionImagesDir,
             @Value("${melosmarket.cors.allowed-origins}") String allowedOrigins) {
         this.workerReferencesDir = Path.of(workerReferencesDir).toAbsolutePath().normalize();
         this.workerProfileImagesDir = Path.of(workerProfileImagesDir).toAbsolutePath().normalize();
         this.problemImagesDir = Path.of(problemImagesDir).toAbsolutePath().normalize();
+        this.supplierImagesDir = Path.of(supplierImagesDir).toAbsolutePath().normalize();
+        this.supplierPromotionImagesDir = Path.of(supplierPromotionImagesDir).toAbsolutePath().normalize();
         this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isBlank())
@@ -47,5 +53,9 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations(workerProfileImagesDir.toUri() + "/");
         registry.addResourceHandler("/uploads/problem-images/**")
                 .addResourceLocations(problemImagesDir.toUri() + "/");
+        registry.addResourceHandler("/uploads/supplier-images/**")
+                .addResourceLocations(supplierImagesDir.toUri() + "/");
+        registry.addResourceHandler("/uploads/supplier-promotions/**")
+                .addResourceLocations(supplierPromotionImagesDir.toUri() + "/");
     }
 }

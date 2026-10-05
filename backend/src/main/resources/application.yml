@@ -40,6 +40,8 @@ melosmarket:
     worker-references-dir: ${MELOSMARKET_WORKER_REFERENCES_DIR:uploads/worker-references}
     worker-profile-images-dir: ${MELOSMARKET_WORKER_PROFILE_IMAGES_DIR:uploads/worker-profile-images}
     problem-images-dir: ${MELOSMARKET_PROBLEM_IMAGES_DIR:uploads/problem-images}
+    supplier-images-dir: ${MELOSMARKET_SUPPLIER_IMAGES_DIR:uploads/supplier-images}
+    supplier-promotion-images-dir: ${MELOSMARKET_SUPPLIER_PROMOTION_IMAGES_DIR:uploads/supplier-promotions}
   public-base-url: ${MELOSMARKET_PUBLIC_BASE_URL:http://localhost:5173}
   email:
     from: ${MELOSMARKET_EMAIL_FROM:melosmarket.hu@gmail.com}

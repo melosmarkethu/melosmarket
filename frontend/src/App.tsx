@@ -175,6 +175,95 @@ type AuthResponse = {
   worker?: WorkerApiResponse
 }
 
+type SupplierPromotion = {
+  id?: number
+  title: string
+  description?: string
+  currentPrice: string
+  originalPrice?: string
+  imageUrl?: string
+  startDate?: string
+  expirationDate?: string
+  active: boolean
+  current: boolean
+}
+
+type SupplierProfile = {
+  id?: number
+  businessName: string
+  email?: string
+  phone?: string
+  website?: string
+  profileImageUrl?: string
+  coverImageUrl?: string
+  description?: string
+  address?: string
+  city?: string
+  county?: string
+  mapLocation?: string
+  openingHours?: string
+  productCategories?: string
+  deliveryAvailable: boolean
+  maxDeliveryDistanceKm?: number
+  deliveryArea?: string
+  deliveryInfo?: string
+  additionalServices?: string
+  promotions: SupplierPromotion[]
+}
+
+type SupplierFormState = {
+  businessName: string
+  email: string
+  password: string
+  phone: string
+  city: string
+  county: string
+  address: string
+  description: string
+}
+
+type SupplierProfileEditState = {
+  businessName: string
+  email: string
+  phone: string
+  website: string
+  description: string
+  address: string
+  city: string
+  county: string
+  mapLocation: string
+  openingHours: string
+  productCategories: string
+  deliveryAvailable: boolean
+  maxDeliveryDistanceKm: string
+  deliveryArea: string
+  deliveryInfo: string
+  additionalServices: string
+}
+
+type SupplierPromotionFormState = {
+  id?: number
+  title: string
+  description: string
+  currentPrice: string
+  originalPrice: string
+  startDate: string
+  expirationDate: string
+  active: boolean
+}
+
+type SupplierSearchState = {
+  city: string
+  county: string
+}
+
+type SupplierQuoteFormState = {
+  customerEmail: string
+  customerPhone: string
+  materials: string
+  message: string
+}
+
 type LoginFormState = {
   email: string
   password: string
@@ -286,6 +375,14 @@ const problemProfileSlug = (problem: ProblemPost) => {
 }
 
 const problemProfilePath = (problem: ProblemPost) => `/${problemProfileSlug(problem)}`
+
+const supplierProfileSlug = (supplier: SupplierProfile) => {
+  const nameSlug = slugify(supplier.businessName) || 'tuzep'
+  const citySlug = supplier.city ? slugify(supplier.city) : 'nincs-megadva'
+  return `tuzep/${citySlug}/${nameSlug}`
+}
+
+const supplierProfilePath = (supplier: SupplierProfile) => `/${supplierProfileSlug(supplier)}`
 
 const updateCanonicalLink = (pathname: string) => {
   const canonicalUrl = new URL(pathname === '' ? '/' : pathname, publicBaseUrl).toString()
@@ -572,8 +669,11 @@ function App() {
   const [selectedWorker, setSelectedWorker] = useState<WorkerCard | null>(null)
   const loadedWorkerSearchRoute = useRef('')
   const [selectedProblem, setSelectedProblem] = useState<ProblemPost | null>(null)
+  const [selectedSupplier, setSelectedSupplier] = useState<SupplierProfile | null>(null)
   const [isWorkerSearchPage, setIsWorkerSearchPage] = useState(false)
   const [isProblemSearchPage, setIsProblemSearchPage] = useState(false)
+  const [isSupplierSearchPage, setIsSupplierSearchPage] = useState(false)
+  const [isSupplierDashboardPage, setIsSupplierDashboardPage] = useState(false)
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('melosmarket_token') ?? '')
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [loginForm, setLoginForm] = useState<LoginFormState>({
@@ -680,6 +780,64 @@ function App() {
   const [submitMessage, setSubmitMessage] = useState('')
   const [adminState, setAdminState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [adminMessage, setAdminMessage] = useState('')
+  const [supplierCards, setSupplierCards] = useState<SupplierProfile[]>([])
+  const [mySupplier, setMySupplier] = useState<SupplierProfile | null>(null)
+  const [supplierSearch, setSupplierSearch] = useState<SupplierSearchState>({
+    city: '',
+    county: '',
+  })
+  const [supplierSearchState, setSupplierSearchState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [supplierSearchMessage, setSupplierSearchMessage] = useState('')
+  const [supplierForm, setSupplierForm] = useState<SupplierFormState>({
+    businessName: '',
+    email: '',
+    password: '',
+    phone: '',
+    city: '',
+    county: '',
+    address: '',
+    description: '',
+  })
+  const [supplierSubmitState, setSupplierSubmitState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [supplierSubmitMessage, setSupplierSubmitMessage] = useState('')
+  const [supplierProfileForm, setSupplierProfileForm] = useState<SupplierProfileEditState>({
+    businessName: '',
+    email: '',
+    phone: '',
+    website: '',
+    description: '',
+    address: '',
+    city: '',
+    county: '',
+    mapLocation: '',
+    openingHours: '',
+    productCategories: '',
+    deliveryAvailable: false,
+    maxDeliveryDistanceKm: '',
+    deliveryArea: '',
+    deliveryInfo: '',
+    additionalServices: '',
+  })
+  const [supplierPromotionForm, setSupplierPromotionForm] = useState<SupplierPromotionFormState>({
+    title: '',
+    description: '',
+    currentPrice: '',
+    originalPrice: '',
+    startDate: '',
+    expirationDate: '',
+    active: true,
+  })
+  const [supplierDashboardState, setSupplierDashboardState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [supplierDashboardMessage, setSupplierDashboardMessage] = useState('')
+  const [quoteFormOpen, setQuoteFormOpen] = useState(false)
+  const [quoteForm, setQuoteForm] = useState<SupplierQuoteFormState>({
+    customerEmail: '',
+    customerPhone: '',
+    materials: '',
+    message: '',
+  })
+  const [quoteState, setQuoteState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [quoteMessage, setQuoteMessage] = useState('')
 
   const workerFromApi = (worker: WorkerApiResponse): WorkerCard => ({
     id: worker.id,
@@ -741,6 +899,59 @@ function App() {
     images: (problem.problemImages ?? []).map(problemImageFromApi),
   })
 
+  const supplierFromApi = (supplier: SupplierProfile): SupplierProfile => ({
+    ...supplier,
+    profileImageUrl: resolveApiImageUrl(supplier.profileImageUrl),
+    coverImageUrl: resolveApiImageUrl(supplier.coverImageUrl),
+    county: supplier.county ? countyLabelsByApiValue[supplier.county] ?? supplier.county : '',
+    promotions: (supplier.promotions ?? []).map((promotion) => ({
+      ...promotion,
+      imageUrl: resolveApiImageUrl(promotion.imageUrl),
+      active: Boolean(promotion.active),
+      current: Boolean(promotion.current),
+    })),
+  })
+
+  const supplierToApiPayload = (form: SupplierProfileEditState) => ({
+    businessName: form.businessName,
+    email: form.email || undefined,
+    phone: form.phone || undefined,
+    website: form.website || undefined,
+    description: form.description || undefined,
+    address: form.address || undefined,
+    city: form.city || undefined,
+    county: form.county || undefined,
+    mapLocation: form.mapLocation || undefined,
+    openingHours: form.openingHours || undefined,
+    productCategories: form.productCategories || undefined,
+    deliveryAvailable: form.deliveryAvailable,
+    maxDeliveryDistanceKm: form.maxDeliveryDistanceKm ? Number(form.maxDeliveryDistanceKm) : undefined,
+    deliveryArea: form.deliveryArea || undefined,
+    deliveryInfo: form.deliveryInfo || undefined,
+    additionalServices: form.additionalServices || undefined,
+  })
+
+  const fillSupplierProfileForm = (supplier: SupplierProfile) => {
+    setSupplierProfileForm({
+      businessName: supplier.businessName,
+      email: supplier.email ?? '',
+      phone: supplier.phone ?? '',
+      website: supplier.website ?? '',
+      description: supplier.description ?? '',
+      address: supplier.address ?? '',
+      city: supplier.city ?? '',
+      county: countyApiValuesByLabel[supplier.county ?? ''] ?? supplier.county ?? '',
+      mapLocation: supplier.mapLocation ?? '',
+      openingHours: supplier.openingHours ?? '',
+      productCategories: supplier.productCategories ?? '',
+      deliveryAvailable: supplier.deliveryAvailable,
+      maxDeliveryDistanceKm: supplier.maxDeliveryDistanceKm ? String(supplier.maxDeliveryDistanceKm) : '',
+      deliveryArea: supplier.deliveryArea ?? '',
+      deliveryInfo: supplier.deliveryInfo ?? '',
+      additionalServices: supplier.additionalServices ?? '',
+    })
+  }
+
   const updateProblemEverywhere = (updatedProblem: ProblemPost) => {
     setSelectedProblem(updatedProblem)
     setProblemPosts((current) =>
@@ -767,6 +978,7 @@ function App() {
 
   const isCustomer = currentUser?.role === 'CUSTOMER'
   const isWorker = currentUser?.role === 'WORKER'
+  const isSupplier = currentUser?.role === 'SUPPLIER'
   const isAdmin = currentUser?.role === 'ADMIN'
   const loggedInWorker = currentUser?.workerId
     ? workerCards.find((worker) => worker.id === currentUser.workerId)
@@ -799,6 +1011,9 @@ function App() {
     if (auth.user.role === 'ADMIN') {
       loadAdminData(auth.token).catch(() => undefined)
     }
+    if (auth.user.role === 'SUPPLIER') {
+      loadMySupplier(auth.token).catch(() => undefined)
+    }
   }
 
   const logout = () => {
@@ -817,6 +1032,8 @@ function App() {
     setVerificationMessage('')
     setVerificationState('idle')
     setSelectedWorker(null)
+    setSelectedSupplier(null)
+    setMySupplier(null)
     setCustomerProblems([])
     setCustomerProblemsState('idle')
     setAdminMessage('')
@@ -952,9 +1169,120 @@ function App() {
     return mappedProblems
   }
 
+  const loadSuppliers = async (search = supplierSearch) => {
+    const params = new URLSearchParams()
+    if (search.city) {
+      params.set('city', search.city)
+    }
+    if (search.county) {
+      params.set('county', search.county)
+    }
+    const query = params.toString()
+    const response = await fetch(`${apiBaseUrl}/suppliers${query ? `?${query}` : ''}`)
+    if (!response.ok) {
+      throw new Error(`Supplier search failed with status ${response.status}`)
+    }
+    const suppliers = (await response.json()).map(supplierFromApi)
+    setSupplierCards(suppliers)
+    return suppliers
+  }
+
+  const loadMySupplier = async (token = authToken) => {
+    const response = await fetch(`${apiBaseUrl}/suppliers/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    if (!response.ok) {
+      throw new Error(`Supplier profile load failed with status ${response.status}`)
+    }
+    const supplier = supplierFromApi(await response.json())
+    setMySupplier(supplier)
+    fillSupplierProfileForm(supplier)
+    setSupplierCards((current) => [supplier, ...current.filter((item) => item.id !== supplier.id)])
+    return supplier
+  }
+
+  const openSupplierProfile = async (supplier: SupplierProfile, updatePath = true) => {
+    setSelectedWorker(null)
+    setSelectedProblem(null)
+    setIsWorkerSearchPage(false)
+    setIsProblemSearchPage(false)
+    setIsSupplierSearchPage(false)
+    setSelectedSupplier(supplier)
+    setQuoteFormOpen(false)
+    setQuoteState('idle')
+    setQuoteMessage('')
+    if (updatePath) {
+      window.history.pushState(null, '', supplierProfilePath(supplier))
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    if (!supplier.id) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/suppliers/${supplier.id}`)
+      if (!response.ok) {
+        throw new Error(`Supplier load failed with status ${response.status}`)
+      }
+      const freshSupplier = supplierFromApi(await response.json())
+      setSelectedSupplier(freshSupplier)
+      setSupplierCards((current) => current.map((item) => (item.id === freshSupplier.id ? freshSupplier : item)))
+    } catch {
+      setSelectedSupplier(supplier)
+    }
+  }
+
+  const closeSupplierProfile = () => {
+    setSelectedSupplier(null)
+    window.history.pushState(null, '', '/')
+  }
+
+  const openSupplierSearchPage = (updatePath = true) => {
+    setSelectedWorker(null)
+    setSelectedProblem(null)
+    setSelectedSupplier(null)
+    setIsWorkerSearchPage(false)
+    setIsProblemSearchPage(false)
+    setIsSupplierSearchPage(true)
+    setIsSupplierDashboardPage(false)
+    if (updatePath) {
+      window.history.pushState(null, '', '/tuzep')
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const closeSupplierSearchPage = () => {
+    setIsSupplierSearchPage(false)
+    window.history.pushState(null, '', '/')
+  }
+
+  const openSupplierDashboardPage = (updatePath = true) => {
+    setSelectedWorker(null)
+    setSelectedProblem(null)
+    setSelectedSupplier(null)
+    setIsWorkerSearchPage(false)
+    setIsProblemSearchPage(false)
+    setIsSupplierSearchPage(false)
+    setIsSupplierDashboardPage(true)
+    if (updatePath) {
+      window.history.pushState(null, '', '/tuzep-dashboard')
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const closeSupplierDashboardPage = () => {
+    setIsSupplierDashboardPage(false)
+    window.history.pushState(null, '', '/')
+  }
+
   const openWorkerProfile = (worker: WorkerCard, updatePath = true) => {
     setIsWorkerSearchPage(false)
     setIsProblemSearchPage(false)
+    setIsSupplierSearchPage(false)
+    setSelectedSupplier(null)
     setSelectedWorker(worker)
     setProfileEditForm({
       businessName: worker.name,
@@ -989,7 +1317,9 @@ function App() {
   const openWorkerSearchPage = (updatePath = true, search = workerSearch) => {
     setSelectedWorker(null)
     setSelectedProblem(null)
+    setSelectedSupplier(null)
     setIsProblemSearchPage(false)
+    setIsSupplierSearchPage(false)
     setIsWorkerSearchPage(true)
     if (updatePath) {
       window.history.pushState(null, '', workerSearchPath(search))
@@ -1005,6 +1335,8 @@ function App() {
   const showProblemProfile = (problem: ProblemPost) => {
     setIsWorkerSearchPage(false)
     setIsProblemSearchPage(false)
+    setIsSupplierSearchPage(false)
+    setSelectedSupplier(null)
     setSelectedProblem(problem)
     setProblemEditForm({
       title: problem.title,
@@ -1049,7 +1381,9 @@ function App() {
   const openProblemSearchPage = (updatePath = true) => {
     setSelectedWorker(null)
     setSelectedProblem(null)
+    setSelectedSupplier(null)
     setIsWorkerSearchPage(false)
+    setIsSupplierSearchPage(false)
     setIsProblemSearchPage(true)
     if (updatePath) {
       window.history.pushState(null, '', '/munkak')
@@ -1274,6 +1608,9 @@ function App() {
     loadProblems(true).catch(() => {
       setProblemPosts(initialProblems)
     })
+    loadSuppliers().catch(() => {
+      setSupplierCards([])
+    })
   }, [])
 
   useEffect(() => {
@@ -1282,8 +1619,11 @@ function App() {
       if (!pathSlug) {
         setSelectedWorker(null)
         setSelectedProblem(null)
+        setSelectedSupplier(null)
         setIsWorkerSearchPage(false)
         setIsProblemSearchPage(false)
+        setIsSupplierSearchPage(false)
+        setIsSupplierDashboardPage(false)
         return
       }
       if (ignoredRouteSlugs.has(pathSlug)) {
@@ -1293,6 +1633,7 @@ function App() {
       if (routeWorkerSearch) {
         setSelectedWorker(null)
         setSelectedProblem(null)
+        setSelectedSupplier(null)
         setWorkerSearch(routeWorkerSearch)
         openWorkerSearchPage(false, routeWorkerSearch)
         if (loadedWorkerSearchRoute.current !== pathSlug) {
@@ -1319,7 +1660,16 @@ function App() {
       if (pathSlug === 'munkak') {
         setSelectedWorker(null)
         setSelectedProblem(null)
+        setSelectedSupplier(null)
         openProblemSearchPage(false)
+        return
+      }
+      if (pathSlug === 'tuzep') {
+        openSupplierSearchPage(false)
+        return
+      }
+      if (pathSlug === 'tuzep-dashboard') {
+        openSupplierDashboardPage(false)
         return
       }
 
@@ -1329,20 +1679,30 @@ function App() {
       if (worker) {
         openWorkerProfile(worker, false)
         setSelectedProblem(null)
+        setSelectedSupplier(null)
         return
       }
 
       const problem = problemPosts.find((item) => problemProfileSlug(item) === pathSlug)
       if (problem) {
         setSelectedWorker(null)
+        setSelectedSupplier(null)
         openProblemProfile(problem, false).catch(() => undefined)
+        return
+      }
+
+      const supplier = supplierCards.find((item) => supplierProfileSlug(item) === pathSlug || `tuzep/${item.id}` === pathSlug)
+      if (supplier) {
+        setSelectedWorker(null)
+        setSelectedProblem(null)
+        openSupplierProfile(supplier, false).catch(() => undefined)
       }
     }
 
     openProfileFromPath()
     window.addEventListener('popstate', openProfileFromPath)
     return () => window.removeEventListener('popstate', openProfileFromPath)
-  }, [workerCards, problemPosts])
+  }, [workerCards, problemPosts, supplierCards])
 
   useEffect(() => {
     let canonicalPath = window.location.pathname.replace(/\/+$/, '') || '/'
@@ -1350,14 +1710,20 @@ function App() {
       canonicalPath = workerProfilePath(selectedWorker)
     } else if (selectedProblem) {
       canonicalPath = problemProfilePath(selectedProblem)
+    } else if (selectedSupplier) {
+      canonicalPath = supplierProfilePath(selectedSupplier)
     } else if (isWorkerSearchPage) {
       canonicalPath = workerSearchPath(workerSearch)
     } else if (isProblemSearchPage) {
       canonicalPath = '/munkak'
+    } else if (isSupplierSearchPage) {
+      canonicalPath = '/tuzep'
+    } else if (isSupplierDashboardPage) {
+      canonicalPath = '/tuzep-dashboard'
     }
 
     updateCanonicalLink(canonicalPath)
-  }, [selectedWorker, selectedProblem, isWorkerSearchPage, isProblemSearchPage, workerSearch])
+  }, [selectedWorker, selectedProblem, selectedSupplier, isWorkerSearchPage, isProblemSearchPage, isSupplierSearchPage, isSupplierDashboardPage, workerSearch])
 
   useEffect(() => {
     if (!authToken) {
@@ -1384,6 +1750,9 @@ function App() {
         }
         if (user.role === 'ADMIN') {
           loadAdminData().catch(() => undefined)
+        }
+        if (user.role === 'SUPPLIER') {
+          loadMySupplier().catch(() => undefined)
         }
       })
       .catch(logout)
@@ -1560,6 +1929,33 @@ function App() {
 
   const updateCustomerForm = (field: keyof CustomerRegistrationFormState, value: string) => {
     setCustomerForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  const updateSupplierForm = (field: keyof SupplierFormState, value: string) => {
+    setSupplierForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  const updateSupplierProfileForm = <Field extends keyof SupplierProfileEditState>(
+    field: Field,
+    value: SupplierProfileEditState[Field],
+  ) => {
+    setSupplierProfileForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  const updateSupplierPromotionForm = <Field extends keyof SupplierPromotionFormState>(
+    field: Field,
+    value: SupplierPromotionFormState[Field],
+  ) => {
+    setSupplierPromotionForm((current) => ({
       ...current,
       [field]: value,
     }))
@@ -1962,6 +2358,276 @@ function App() {
     }
   }
 
+  const submitSupplierRegistration = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSupplierSubmitState('submitting')
+    setSupplierSubmitMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/auth/register/supplier`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...supplierForm,
+          county: supplierForm.county || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Supplier registration failed with status ${response.status}`)
+      }
+
+      const auth = await response.json()
+      rememberAuth(auth)
+      await loadMySupplier(auth.token)
+      setSupplierForm({
+        businessName: '',
+        email: '',
+        password: '',
+        phone: '',
+        city: '',
+        county: '',
+        address: '',
+        description: '',
+      })
+      setSupplierSubmitState('success')
+      setSupplierSubmitMessage('Sikeres Tüzép regisztráció. Már kezelheted is a profilodat.')
+      loadRegisteredUserCount().catch(() => {
+        setRegisteredUserCount(null)
+      })
+    } catch {
+      setSupplierSubmitState('error')
+      setSupplierSubmitMessage('Nem sikerült regisztrálni. Lehet, hogy ez az email cím már használatban van.')
+    }
+  }
+
+  const submitSupplierSearch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSupplierSearchState('loading')
+    setSupplierSearchMessage('')
+
+    try {
+      const results = await loadSuppliers(supplierSearch)
+      setSupplierSearchState('idle')
+      setSupplierSearchMessage(
+        results.length > 0
+          ? `${results.length} Tüzép vagy építőanyag kereskedés található.`
+          : 'Nincs találat erre a keresésre.',
+      )
+    } catch {
+      setSupplierSearchState('error')
+      setSupplierSearchMessage('Nem sikerült betölteni a Tüzép találatokat.')
+    }
+  }
+
+  const submitSupplierProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSupplierDashboardState('submitting')
+    setSupplierDashboardMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/suppliers/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders(),
+        },
+        body: JSON.stringify(supplierToApiPayload(supplierProfileForm)),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Supplier profile update failed with status ${response.status}`)
+      }
+
+      const supplier = supplierFromApi(await response.json())
+      setMySupplier(supplier)
+      setSelectedSupplier((current) => (current?.id === supplier.id ? supplier : current))
+      setSupplierCards((current) => [supplier, ...current.filter((item) => item.id !== supplier.id)])
+      fillSupplierProfileForm(supplier)
+      setSupplierDashboardState('success')
+      setSupplierDashboardMessage('A Tüzép profil frissítve.')
+    } catch {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage('Nem sikerült frissíteni a Tüzép profilt.')
+    }
+  }
+
+  const uploadSupplierImage = async (event: ChangeEvent<HTMLInputElement>, imageType: 'profile' | 'cover') => {
+    const file = event.target.files?.[0]
+    if (!file || !authToken) {
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      const response = await fetch(`${apiBaseUrl}/suppliers/me/images?imageType=${imageType}`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: formData,
+      })
+      if (!response.ok) {
+        throw new Error(`Supplier image upload failed with status ${response.status}`)
+      }
+      const supplier = supplierFromApi(await response.json())
+      setMySupplier(supplier)
+      setSupplierCards((current) => [supplier, ...current.filter((item) => item.id !== supplier.id)])
+      setSupplierDashboardState('success')
+      setSupplierDashboardMessage(imageType === 'cover' ? 'A borítókép frissítve.' : 'A logó frissítve.')
+      event.target.value = ''
+    } catch {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage('Nem sikerült feltölteni a képet.')
+    }
+  }
+
+  const submitSupplierPromotion = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSupplierDashboardState('submitting')
+    setSupplierDashboardMessage('')
+
+    const promotionId = supplierPromotionForm.id
+    try {
+      const response = await fetch(
+        promotionId
+          ? `${apiBaseUrl}/suppliers/me/promotions/${promotionId}`
+          : `${apiBaseUrl}/suppliers/me/promotions`,
+        {
+          method: promotionId ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders(),
+          },
+          body: JSON.stringify({
+            title: supplierPromotionForm.title,
+            description: supplierPromotionForm.description || undefined,
+            currentPrice: supplierPromotionForm.currentPrice,
+            originalPrice: supplierPromotionForm.originalPrice || undefined,
+            startDate: supplierPromotionForm.startDate || undefined,
+            expirationDate: supplierPromotionForm.expirationDate || undefined,
+            active: supplierPromotionForm.active,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(`Supplier promotion save failed with status ${response.status}`)
+      }
+      await loadMySupplier()
+      setSupplierPromotionForm({
+        title: '',
+        description: '',
+        currentPrice: '',
+        originalPrice: '',
+        startDate: '',
+        expirationDate: '',
+        active: true,
+      })
+      setSupplierDashboardState('success')
+      setSupplierDashboardMessage(promotionId ? 'Akció frissítve.' : 'Akció létrehozva.')
+    } catch {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage('Nem sikerült menteni az akciót.')
+    }
+  }
+
+  const editSupplierPromotion = (promotion: SupplierPromotion) => {
+    setSupplierPromotionForm({
+      id: promotion.id,
+      title: promotion.title,
+      description: promotion.description ?? '',
+      currentPrice: promotion.currentPrice,
+      originalPrice: promotion.originalPrice ?? '',
+      startDate: promotion.startDate ?? '',
+      expirationDate: promotion.expirationDate ?? '',
+      active: promotion.active,
+    })
+  }
+
+  const deleteSupplierPromotion = async (promotion: SupplierPromotion) => {
+    if (!promotion.id || !window.confirm(`Biztosan törlöd ezt az akciót: ${promotion.title}?`)) {
+      return
+    }
+    try {
+      const response = await fetch(`${apiBaseUrl}/suppliers/me/promotions/${promotion.id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+      if (!response.ok) {
+        throw new Error(`Supplier promotion delete failed with status ${response.status}`)
+      }
+      await loadMySupplier()
+      setSupplierDashboardState('success')
+      setSupplierDashboardMessage('Akció törölve.')
+    } catch {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage('Nem sikerült törölni az akciót.')
+    }
+  }
+
+  const uploadSupplierPromotionImage = async (event: ChangeEvent<HTMLInputElement>, promotion: SupplierPromotion) => {
+    const file = event.target.files?.[0]
+    if (!file || !promotion.id) {
+      return
+    }
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      const response = await fetch(`${apiBaseUrl}/suppliers/me/promotions/${promotion.id}/image`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: formData,
+      })
+      if (!response.ok) {
+        throw new Error(`Promotion image upload failed with status ${response.status}`)
+      }
+      await loadMySupplier()
+      setSupplierDashboardState('success')
+      setSupplierDashboardMessage('Akció képe frissítve.')
+      event.target.value = ''
+    } catch {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage('Nem sikerült feltölteni az akció képét.')
+    }
+  }
+
+  const submitSupplierQuoteRequest = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedSupplier?.id) {
+      return
+    }
+    setQuoteState('submitting')
+    setQuoteMessage('')
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/suppliers/${selectedSupplier.id}/quote-requests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerEmail: quoteForm.customerEmail,
+          customerPhone: quoteForm.customerPhone || undefined,
+          materials: quoteForm.materials,
+          message: quoteForm.message || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Quote request failed with status ${response.status}`)
+      }
+
+      setQuoteState('success')
+      setQuoteMessage('Az ajánlatkérés sikeresen elküldve. A kereskedés emailben megkapta a kérésedet.')
+      setQuoteForm({ customerEmail: '', customerPhone: '', materials: '', message: '' })
+    } catch {
+      setQuoteState('error')
+      setQuoteMessage('Nem sikerült elküldeni az ajánlatkérést. Kérjük, próbáld újra később.')
+    }
+  }
+
   const submitProblem = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSubmitState('submitting')
@@ -2320,6 +2986,377 @@ function App() {
       })}
     </div>
   )
+
+  const renderSupplierGrid = (suppliers: SupplierProfile[]) => (
+    <div className="supplier-grid">
+      {suppliers.length > 0 ? suppliers.map((supplier) => {
+        const currentPromotions = supplier.promotions.filter((promotion) => promotion.current).slice(0, 2)
+        return (
+          <article className="supplier-card" key={supplier.id ?? supplier.businessName}>
+            <div className="supplier-card-main">
+              <div className="supplier-logo" aria-hidden="true">
+                {supplier.profileImageUrl ? (
+                  <img src={supplier.profileImageUrl} alt="" />
+                ) : (
+                  <span>{supplier.businessName.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div>
+                <p className="section-kicker">Tüzép / építőanyag</p>
+                <h3>{supplier.businessName}</h3>
+                <p className="supplier-location">📍 {[supplier.city, supplier.county].filter(Boolean).join(', ') || 'Helyszín egyeztetéssel'}</p>
+              </div>
+            </div>
+            <div className="supplier-promo-preview">
+              <strong>🔥 Aktuális akciók</strong>
+              {currentPromotions.length > 0 ? currentPromotions.map((promotion) => (
+                <div className="mini-promo" key={promotion.id ?? promotion.title}>
+                  {promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}
+                  <span>{promotion.title}</span>
+                  <b>{promotion.currentPrice}</b>
+                </div>
+              )) : (
+                <p className="empty-note">Jelenleg nincs feltöltött akció.</p>
+              )}
+            </div>
+            <button className="button primary" type="button" onClick={() => openSupplierProfile(supplier)}>
+              Profil megtekintése →
+            </button>
+          </article>
+        )
+      }) : (
+        <div className="empty-results">
+          <h3>Még nincs Tüzép találat</h3>
+          <p>Az első építőanyag kereskedések itt jelennek meg.</p>
+        </div>
+      )}
+    </div>
+  )
+
+  const renderSupplierSearchContent = () => (
+    <>
+      <form className="search-panel workers-search-panel" onSubmit={submitSupplierSearch}>
+        <div className="field">
+          <label htmlFor="supplier-city">Város</label>
+          <input
+            id="supplier-city"
+            placeholder="Eger"
+            value={supplierSearch.city}
+            onChange={(event) => setSupplierSearch((current) => ({ ...current, city: event.target.value }))}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="supplier-county">Megye</label>
+          <select
+            id="supplier-county"
+            value={supplierSearch.county}
+            onChange={(event) => setSupplierSearch((current) => ({ ...current, county: event.target.value }))}
+          >
+            <option value="">Minden megye</option>
+            {counties.map((county) => (
+              <option key={county.value} value={county.value}>
+                {county.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button className="button primary" type="submit" disabled={supplierSearchState === 'loading'}>
+          {supplierSearchState === 'loading' ? 'Keresés...' : 'Tüzép keresése'}
+        </button>
+      </form>
+
+      {supplierSearchMessage && (
+        <p className={`form-message ${supplierSearchState === 'error' ? 'error' : 'success'}`} role="status">
+          {supplierSearchMessage}
+        </p>
+      )}
+
+      {renderSupplierGrid(supplierCards)}
+    </>
+  )
+
+  const renderSupplierDashboard = () => {
+    if (!mySupplier) {
+      return (
+        <section className="section-block supplier-dashboard">
+          <p className="empty-note">Nem található Tüzép profil ehhez a fiókhoz.</p>
+        </section>
+      )
+    }
+
+    return (
+    <section className="section-block supplier-dashboard" id="tuzep-dashboard">
+      <div className="section-heading">
+        <div>
+          <p className="section-kicker">Tüzép dashboard</p>
+          <h2>Saját profil és akciók kezelése.</h2>
+        </div>
+        <button className="button secondary" type="button" onClick={() => openSupplierProfile(mySupplier)}>
+          Nyilvános profil
+        </button>
+      </div>
+
+      <div className="profile-grid">
+        <form className="profile-panel problem-form" onSubmit={submitSupplierProfile}>
+          <p className="section-kicker">Saját profil</p>
+          <h3>Üzleti adatok</h3>
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="supplier-profile-name">Cégnév</label>
+              <input id="supplier-profile-name" required value={supplierProfileForm.businessName} onChange={(event) => updateSupplierProfileForm('businessName', event.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="supplier-profile-email">Email</label>
+              <input id="supplier-profile-email" type="email" value={supplierProfileForm.email} onChange={(event) => updateSupplierProfileForm('email', event.target.value)} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="supplier-profile-phone">Telefon</label>
+              <input id="supplier-profile-phone" value={supplierProfileForm.phone} onChange={(event) => updateSupplierProfileForm('phone', event.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="supplier-profile-website">Weboldal</label>
+              <input id="supplier-profile-website" value={supplierProfileForm.website} onChange={(event) => updateSupplierProfileForm('website', event.target.value)} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="supplier-profile-city">Város</label>
+              <input id="supplier-profile-city" value={supplierProfileForm.city} onChange={(event) => updateSupplierProfileForm('city', event.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="supplier-profile-county">Megye</label>
+              <select id="supplier-profile-county" value={supplierProfileForm.county} onChange={(event) => updateSupplierProfileForm('county', event.target.value)}>
+                <option value="">Válassz megyét</option>
+                {counties.map((county) => <option key={county.value} value={county.value}>{county.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="supplier-profile-address">Cím</label>
+            <input id="supplier-profile-address" value={supplierProfileForm.address} onChange={(event) => updateSupplierProfileForm('address', event.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="supplier-profile-description">Bemutatkozás</label>
+            <textarea id="supplier-profile-description" rows={4} value={supplierProfileForm.description} onChange={(event) => updateSupplierProfileForm('description', event.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="supplier-profile-hours">Nyitvatartás</label>
+            <textarea id="supplier-profile-hours" rows={3} value={supplierProfileForm.openingHours} onChange={(event) => updateSupplierProfileForm('openingHours', event.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="supplier-profile-categories">Termékkategóriák</label>
+            <textarea id="supplier-profile-categories" rows={3} value={supplierProfileForm.productCategories} onChange={(event) => updateSupplierProfileForm('productCategories', event.target.value)} />
+          </div>
+          <label className="checkbox-field" htmlFor="supplier-delivery">
+            <input id="supplier-delivery" type="checkbox" checked={supplierProfileForm.deliveryAvailable} onChange={(event) => updateSupplierProfileForm('deliveryAvailable', event.target.checked)} />
+            <span>Szállítást vállalunk</span>
+          </label>
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="supplier-distance">Max. szállítási távolság km</label>
+              <input id="supplier-distance" type="number" min="0" value={supplierProfileForm.maxDeliveryDistanceKm} onChange={(event) => updateSupplierProfileForm('maxDeliveryDistanceKm', event.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="supplier-delivery-area">Szállítási terület</label>
+              <input id="supplier-delivery-area" value={supplierProfileForm.deliveryArea} onChange={(event) => updateSupplierProfileForm('deliveryArea', event.target.value)} />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="supplier-extra">További szolgáltatások</label>
+            <textarea id="supplier-extra" rows={3} value={supplierProfileForm.additionalServices} onChange={(event) => updateSupplierProfileForm('additionalServices', event.target.value)} />
+          </div>
+          <button className="button primary" type="submit" disabled={supplierDashboardState === 'submitting'}>
+            {supplierDashboardState === 'submitting' ? 'Mentés...' : 'Profil mentése'}
+          </button>
+          {supplierDashboardMessage && <p className={`form-message ${supplierDashboardState === 'success' ? 'success' : 'error'}`}>{supplierDashboardMessage}</p>}
+          <div className="upload-actions">
+            <label className="upload-box" htmlFor="supplier-logo-upload">
+              <span>Logó feltöltése</span>
+              <input id="supplier-logo-upload" type="file" accept="image/png,image/jpeg" onChange={(event) => uploadSupplierImage(event, 'profile')} />
+            </label>
+            <label className="upload-box" htmlFor="supplier-cover-upload">
+              <span>Borítókép feltöltése</span>
+              <input id="supplier-cover-upload" type="file" accept="image/png,image/jpeg" onChange={(event) => uploadSupplierImage(event, 'cover')} />
+            </label>
+          </div>
+        </form>
+
+        <div className="profile-panel">
+          <p className="section-kicker">Akciók</p>
+          <h3>Aktuális ajánlatok kezelése</h3>
+          <form className="problem-form" onSubmit={submitSupplierPromotion}>
+            <div className="field"><label htmlFor="promo-title">Akció címe</label><input id="promo-title" required value={supplierPromotionForm.title} onChange={(event) => updateSupplierPromotionForm('title', event.target.value)} /></div>
+            <div className="field"><label htmlFor="promo-description">Leírás</label><textarea id="promo-description" rows={3} value={supplierPromotionForm.description} onChange={(event) => updateSupplierPromotionForm('description', event.target.value)} /></div>
+            <div className="form-row">
+              <div className="field"><label htmlFor="promo-price">Aktuális ár</label><input id="promo-price" required value={supplierPromotionForm.currentPrice} onChange={(event) => updateSupplierPromotionForm('currentPrice', event.target.value)} /></div>
+              <div className="field"><label htmlFor="promo-original-price">Eredeti ár</label><input id="promo-original-price" value={supplierPromotionForm.originalPrice} onChange={(event) => updateSupplierPromotionForm('originalPrice', event.target.value)} /></div>
+            </div>
+            <div className="form-row">
+              <div className="field"><label htmlFor="promo-start">Kezdés</label><input id="promo-start" type="date" value={supplierPromotionForm.startDate} onChange={(event) => updateSupplierPromotionForm('startDate', event.target.value)} /></div>
+              <div className="field"><label htmlFor="promo-expiration">Lejárat</label><input id="promo-expiration" type="date" value={supplierPromotionForm.expirationDate} onChange={(event) => updateSupplierPromotionForm('expirationDate', event.target.value)} /></div>
+            </div>
+            <label className="checkbox-field" htmlFor="promo-active"><input id="promo-active" type="checkbox" checked={supplierPromotionForm.active} onChange={(event) => updateSupplierPromotionForm('active', event.target.checked)} /><span>Aktív akció</span></label>
+            <button className="button primary" type="submit">{supplierPromotionForm.id ? 'Akció mentése' : 'Akció létrehozása'}</button>
+          </form>
+
+          <div className="admin-list">
+            {mySupplier.promotions.length > 0 ? mySupplier.promotions.map((promotion) => (
+              <div className="admin-row" key={promotion.id ?? promotion.title}>
+                <div className="admin-row-copy">
+                  <strong>{promotion.title}</strong>
+                  <span>{promotion.currentPrice} · {promotion.current ? 'aktív' : 'nem látható aktuálisként'}</span>
+                </div>
+                <div className="admin-worker-controls">
+                  <label className="button ghost">
+                    Kép
+                    <input className="visually-hidden-input" type="file" accept="image/png,image/jpeg" onChange={(event) => uploadSupplierPromotionImage(event, promotion)} />
+                  </label>
+                  <button className="button secondary" type="button" onClick={() => editSupplierPromotion(promotion)}>Szerkesztés</button>
+                  <button className="button danger" type="button" onClick={() => deleteSupplierPromotion(promotion)}>Törlés</button>
+                </div>
+              </div>
+            )) : <p className="empty-note">Még nincs feltöltött akció.</p>}
+          </div>
+        </div>
+      </div>
+    </section>
+    )
+  }
+
+  if (selectedSupplier) {
+    const currentPromotions = selectedSupplier.promotions.filter((promotion) => promotion.current)
+    return (
+      <main className="page-shell">
+        <header className="site-header">
+          <button className="brand brand-button" type="button" onClick={closeSupplierProfile}>
+            <span className="brand-mark">M</span>
+            <span>Melos Market</span>
+          </button>
+          <button className="header-action" type="button" onClick={closeSupplierProfile}>
+            Vissza a piactérre
+          </button>
+        </header>
+
+        <section className="supplier-profile-hero">
+          {selectedSupplier.coverImageUrl && (
+            <img className="supplier-cover" src={selectedSupplier.coverImageUrl} alt={`${selectedSupplier.businessName} borítóképe`} />
+          )}
+          <div className="supplier-profile-card">
+            <div className="supplier-logo large">
+              {selectedSupplier.profileImageUrl ? (
+                <img src={selectedSupplier.profileImageUrl} alt={`${selectedSupplier.businessName} logó`} />
+              ) : (
+                <span>{selectedSupplier.businessName.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            <div>
+              <p className="eyebrow">Tüzép / építőanyag kereskedés</p>
+              <h1>{selectedSupplier.businessName}</h1>
+              <p>{selectedSupplier.description || 'Ez a kereskedés még nem adott meg részletes bemutatkozást.'}</p>
+              <div className="profile-tags">
+                {selectedSupplier.city && <span>📍 {selectedSupplier.city}</span>}
+                {selectedSupplier.county && <span>{selectedSupplier.county}</span>}
+                {selectedSupplier.deliveryAvailable && <span>🚚 Szállítás elérhető</span>}
+              </div>
+            </div>
+            <button className="button primary quote-button" type="button" onClick={() => setQuoteFormOpen(true)}>
+              Ajánlatkérés →
+            </button>
+          </div>
+        </section>
+
+        <section className="profile-grid">
+          <div className="profile-panel">
+            <p className="section-kicker">Elérhetőség</p>
+            <h2>Kapcsolat és nyitvatartás</h2>
+            <dl className="profile-details">
+              {selectedSupplier.phone && <div><dt>Telefon</dt><dd><a href={phoneHref(selectedSupplier.phone)}>{selectedSupplier.phone}</a></dd></div>}
+              {selectedSupplier.website && <div><dt>Weboldal</dt><dd><a href={externalUrl(selectedSupplier.website)} target="_blank" rel="noreferrer">{selectedSupplier.website}</a></dd></div>}
+              {selectedSupplier.address && <div><dt>Cím</dt><dd>{selectedSupplier.address}</dd></div>}
+              {selectedSupplier.openingHours && <div><dt>Nyitvatartás</dt><dd>{selectedSupplier.openingHours}</dd></div>}
+              {selectedSupplier.mapLocation && <div><dt>Térkép</dt><dd><a href={externalUrl(selectedSupplier.mapLocation)} target="_blank" rel="noreferrer">Megnyitás térképen</a></dd></div>}
+            </dl>
+          </div>
+
+          <div className="profile-panel">
+            <p className="section-kicker">Szállítás</p>
+            <h2>Szállítási információk</h2>
+            <p>{selectedSupplier.deliveryAvailable ? '🚚 Szállítás: igen' : 'Szállítás: nincs megadva'}</p>
+            {selectedSupplier.maxDeliveryDistanceKm && <p>📍 Szállítási távolság: {selectedSupplier.maxDeliveryDistanceKm} km</p>}
+            {selectedSupplier.deliveryArea && <p>{selectedSupplier.deliveryArea}</p>}
+            {selectedSupplier.deliveryInfo && <p>{selectedSupplier.deliveryInfo}</p>}
+            {selectedSupplier.productCategories && <p><strong>Termékkategóriák:</strong> {selectedSupplier.productCategories}</p>}
+            {selectedSupplier.additionalServices && <p><strong>Extra szolgáltatások:</strong> {selectedSupplier.additionalServices}</p>}
+          </div>
+        </section>
+
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">🔥 Aktuális akciók</p>
+              <h2>Friss ajánlatok ettől a kereskedéstől.</h2>
+            </div>
+          </div>
+          <div className="promotion-grid">
+            {currentPromotions.length > 0 ? currentPromotions.map((promotion) => (
+              <article className="promotion-card" key={promotion.id ?? promotion.title}>
+                {promotion.imageUrl && <img src={promotion.imageUrl} alt={promotion.title} />}
+                <div>
+                  <h3>{promotion.title}</h3>
+                  {promotion.description && <p>{promotion.description}</p>}
+                  <div className="price-row">
+                    <strong>{promotion.currentPrice}</strong>
+                    {promotion.originalPrice && <span>{promotion.originalPrice}</span>}
+                  </div>
+                  {promotion.expirationDate && <small>Érvényes: {promotion.expirationDate}</small>}
+                </div>
+              </article>
+            )) : (
+              <p className="empty-note">Jelenleg nincs aktív akció.</p>
+            )}
+          </div>
+        </section>
+
+        {quoteFormOpen && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="verification-modal quote-modal" role="dialog" aria-modal="true" aria-labelledby="quote-title">
+              <button className="modal-close-button" type="button" aria-label="Ajánlatkérés bezárása" onClick={() => setQuoteFormOpen(false)}>
+                X
+              </button>
+              <p className="section-kicker">Ajánlatkérés</p>
+              <h2 id="quote-title">Ajánlatkérés küldése</h2>
+              <form className="problem-form" onSubmit={submitSupplierQuoteRequest}>
+                <div className="form-row">
+                  <div className="field">
+                    <label htmlFor="quote-email">Email</label>
+                    <input id="quote-email" type="email" required value={quoteForm.customerEmail} onChange={(event) => setQuoteForm((current) => ({ ...current, customerEmail: event.target.value }))} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="quote-phone">Telefon opcionális</label>
+                    <input id="quote-phone" value={quoteForm.customerPhone} onChange={(event) => setQuoteForm((current) => ({ ...current, customerPhone: event.target.value }))} />
+                  </div>
+                </div>
+                <div className="field">
+                  <label htmlFor="quote-materials">Milyen anyagokra van szükséged?</label>
+                  <textarea id="quote-materials" required rows={5} value={quoteForm.materials} onChange={(event) => setQuoteForm((current) => ({ ...current, materials: event.target.value }))} />
+                </div>
+                <div className="field">
+                  <label htmlFor="quote-message">További információ</label>
+                  <textarea id="quote-message" rows={4} value={quoteForm.message} onChange={(event) => setQuoteForm((current) => ({ ...current, message: event.target.value }))} />
+                </div>
+                <button className="button primary full-width" type="submit" disabled={quoteState === 'submitting'}>
+                  {quoteState === 'submitting' ? 'Küldés...' : 'Ajánlatkérés küldése'}
+                </button>
+                {quoteMessage && <p className={`form-message ${quoteState === 'success' ? 'success' : 'error'}`} role="status">{quoteMessage}</p>}
+              </form>
+            </section>
+          </div>
+        )}
+      </main>
+    )
+  }
 
   if (selectedProblem) {
     const isOwnProblem = Boolean(
@@ -3273,6 +4310,53 @@ function App() {
     )
   }
 
+  if (isSupplierDashboardPage) {
+    return (
+      <main className="page-shell">
+        <header className="site-header">
+          <button className="brand brand-button" type="button" onClick={closeSupplierDashboardPage}>
+            <span className="brand-mark">M</span>
+            <span>Melos Market</span>
+          </button>
+
+          <button className="header-action" type="button" onClick={closeSupplierDashboardPage}>
+            Vissza a főoldalra
+          </button>
+        </header>
+
+        {renderSupplierDashboard()}
+      </main>
+    )
+  }
+
+  if (isSupplierSearchPage) {
+    return (
+      <main className="page-shell">
+        <header className="site-header">
+          <button className="brand brand-button" type="button" onClick={closeSupplierSearchPage}>
+            <span className="brand-mark">M</span>
+            <span>Melos Market</span>
+          </button>
+
+          <button className="header-action" type="button" onClick={closeSupplierSearchPage}>
+            Vissza a főoldalra
+          </button>
+        </header>
+
+        <section className="section-block workers-search-page tuzep-section">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">🔥 Tüzép kereső</p>
+              <h1>Építőanyag kereskedések és aktuális akciók egy helyen.</h1>
+            </div>
+          </div>
+
+          {renderSupplierSearchContent()}
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="page-shell">
       <header className="site-header">
@@ -3312,6 +4396,16 @@ function App() {
               Probléma feltöltése
             </a>
             <a
+              href="/tuzep"
+              onClick={(event) => {
+                event.preventDefault()
+                closeMobileMenu()
+                openSupplierSearchPage()
+              }}
+            >
+              Tüzép kereső
+            </a>
+            <a
               href="/munkak"
               onClick={(event) => {
                 event.preventDefault()
@@ -3343,6 +4437,18 @@ function App() {
                   >
                     {loggedInWorker.name}
                   </button>
+                ) : isSupplier && mySupplier ? (
+                  <a
+                    className="account-pill account-pill-button"
+                    href="/tuzep-dashboard"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      closeMobileMenu()
+                      openSupplierDashboardPage()
+                    }}
+                  >
+                    {mySupplier.businessName}
+                  </a>
                 ) : (
                   <span className="account-pill">{currentUser.email}</span>
                 )}
@@ -3362,6 +4468,9 @@ function App() {
                 </a>
                 <a className="header-action header-auth-action" href="#worker-signup" onClick={closeMobileMenu}>
                   Regisztráció szakemberként
+                </a>
+                <a className="header-action header-auth-action" href="#supplier-signup" onClick={closeMobileMenu}>
+                  Tüzép regisztráció
                 </a>
                 <div className="login-popover-wrap header-auth-action">
                   <button
@@ -4193,6 +5302,55 @@ function App() {
           </ol>
         </div>
       </section>
+
+      <section className="section-block tuzep-section" id="tuzep">
+        <div className="section-heading">
+          <div>
+            <p className="section-kicker">🔥 Tüzép kereső</p>
+            <h2>Építőanyag kereskedések és aktuális akciók egy helyen.</h2>
+          </div>
+          <a
+            className="button primary"
+            href="/tuzep"
+            onClick={(event) => {
+              event.preventDefault()
+              openSupplierSearchPage()
+            }}
+          >
+            Tüzép kereső megnyitása
+          </a>
+        </div>
+      </section>
+
+
+
+      {!currentUser && (
+        <section className="worker-signup supplier-signup" id="supplier-signup">
+          <div>
+            <p className="section-kicker">Tüzépeknek és építőanyag kereskedéseknek</p>
+            <h2>Regisztrálj Tüzépként, és mutasd meg az aktuális akcióidat.</h2>
+            <p className="muted-text">Saját profilt, logót, szállítási információkat és több párhuzamos akciót kezelhetsz.</p>
+          </div>
+          <form className="worker-form" onSubmit={submitSupplierRegistration}>
+            <div className="form-row">
+              <div className="field"><label htmlFor="supplier-register-name">Cégnév</label><input id="supplier-register-name" required value={supplierForm.businessName} onChange={(event) => updateSupplierForm('businessName', event.target.value)} /></div>
+              <div className="field"><label htmlFor="supplier-register-email">Email</label><input id="supplier-register-email" type="email" required value={supplierForm.email} onChange={(event) => updateSupplierForm('email', event.target.value)} /></div>
+            </div>
+            <div className="form-row">
+              <div className="field"><label htmlFor="supplier-register-password">Jelszó</label><input id="supplier-register-password" type="password" minLength={8} required value={supplierForm.password} onChange={(event) => updateSupplierForm('password', event.target.value)} /></div>
+              <div className="field"><label htmlFor="supplier-register-phone">Telefon</label><input id="supplier-register-phone" value={supplierForm.phone} onChange={(event) => updateSupplierForm('phone', event.target.value)} /></div>
+            </div>
+            <div className="form-row">
+              <div className="field"><label htmlFor="supplier-register-city">Város</label><input id="supplier-register-city" value={supplierForm.city} onChange={(event) => updateSupplierForm('city', event.target.value)} /></div>
+              <div className="field"><label htmlFor="supplier-register-county">Megye</label><select id="supplier-register-county" value={supplierForm.county} onChange={(event) => updateSupplierForm('county', event.target.value)}><option value="">Válassz megyét</option>{counties.map((county) => <option key={county.value} value={county.value}>{county.label}</option>)}</select></div>
+            </div>
+            <div className="field"><label htmlFor="supplier-register-address">Cím</label><input id="supplier-register-address" value={supplierForm.address} onChange={(event) => updateSupplierForm('address', event.target.value)} /></div>
+            <div className="field"><label htmlFor="supplier-register-description">Rövid bemutatkozás</label><textarea id="supplier-register-description" rows={4} value={supplierForm.description} onChange={(event) => updateSupplierForm('description', event.target.value)} /></div>
+            <button className="button primary" type="submit" disabled={supplierSubmitState === 'submitting'}>{supplierSubmitState === 'submitting' ? 'Regisztráció...' : 'Csatlakozás Tüzépként'}</button>
+            {supplierSubmitMessage && <p className={`form-message ${supplierSubmitState === 'success' ? 'success' : 'error'}`}>{supplierSubmitMessage}</p>}
+          </form>
+        </section>
+      )}
 
       <section className="section-block jobs-section" id="jobs">
         <div className="section-heading">
