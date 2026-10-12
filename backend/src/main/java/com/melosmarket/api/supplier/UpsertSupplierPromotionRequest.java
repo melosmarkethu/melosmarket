@@ -10,6 +10,7 @@ public record UpsertSupplierPromotionRequest(
         @Size(max = 1500) String description,
         @NotBlank @Size(max = 80) String currentPrice,
         @Size(max = 80) String originalPrice,
+        @Size(max = 20) String priceUnit,
         LocalDate startDate,
         LocalDate expirationDate,
         Boolean active) {

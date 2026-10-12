@@ -9,6 +9,7 @@ public record SupplierPromotionDto(
         String description,
         String currentPrice,
         String originalPrice,
+        String priceUnit,
         String imageUrl,
         LocalDate startDate,
         LocalDate expirationDate,

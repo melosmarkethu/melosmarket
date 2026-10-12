@@ -50,6 +50,12 @@ public class SupplierController {
         return ResponseEntity.ok(supplierService.updateMySupplierProfile(request));
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMySupplierProfile() {
+        supplierService.deleteMySupplierProfile();
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/me/images")
     public ResponseEntity<SupplierDto> uploadMySupplierImage(
             @RequestParam(defaultValue = "profile") String imageType,

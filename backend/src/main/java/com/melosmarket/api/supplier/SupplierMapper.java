@@ -43,6 +43,7 @@ public class SupplierMapper {
                 entity.getDescription(),
                 entity.getCurrentPrice(),
                 entity.getOriginalPrice(),
+                entity.getPriceUnit(),
                 entity.getImageUrl(),
                 entity.getStartDate(),
                 entity.getExpirationDate(),

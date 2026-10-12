@@ -39,6 +39,9 @@ public class SupplierPromotionEntity {
     @Column(name = "original_price", length = 80)
     private String originalPrice;
 
+    @Column(name = "price_unit", nullable = false, length = 20)
+    private String priceUnit = "M2";
+
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
@@ -87,6 +90,8 @@ public class SupplierPromotionEntity {
     public void setCurrentPrice(String currentPrice) { this.currentPrice = currentPrice; }
     public String getOriginalPrice() { return originalPrice; }
     public void setOriginalPrice(String originalPrice) { this.originalPrice = originalPrice; }
+    public String getPriceUnit() { return priceUnit; }
+    public void setPriceUnit(String priceUnit) { this.priceUnit = priceUnit; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public String getImageStoragePath() { return imageStoragePath; }

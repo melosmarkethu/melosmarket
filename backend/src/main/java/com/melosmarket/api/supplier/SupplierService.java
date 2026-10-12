@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import com.melosmarket.api.auth.AuthContext;
@@ -162,6 +163,17 @@ public class SupplierService {
     }
 
     @Transactional
+    public void deleteMySupplierProfile() {
+        SupplierEntity supplier = getSupplierEntityForUser(authContext.requireUser().id());
+        List<String> imagePaths = new ArrayList<>();
+        imagePaths.add(supplier.getProfileImageStoragePath());
+        imagePaths.add(supplier.getCoverImageStoragePath());
+        supplier.getPromotions().forEach(promotion -> imagePaths.add(promotion.getImageStoragePath()));
+        supplierRepository.delete(supplier);
+        imagePaths.forEach(this::deleteStoredFile);
+    }
+
+    @Transactional
     public SupplierPromotionDto createMyPromotion(UpsertSupplierPromotionRequest request) {
         SupplierEntity supplier = getSupplierEntityForUser(authContext.requireUser().id());
         SupplierPromotionEntity promotion = new SupplierPromotionEntity();
@@ -256,9 +268,21 @@ public class SupplierService {
         promotion.setDescription(blankToNull(request.description()));
         promotion.setCurrentPrice(request.currentPrice().trim());
         promotion.setOriginalPrice(blankToNull(request.originalPrice()));
+        promotion.setPriceUnit(normalizePriceUnit(request.priceUnit()));
         promotion.setStartDate(request.startDate());
         promotion.setExpirationDate(request.expirationDate());
         promotion.setActive(!Boolean.FALSE.equals(request.active()));
+    }
+
+    private String normalizePriceUnit(String priceUnit) {
+        if (priceUnit == null || priceUnit.isBlank()) {
+            return "M2";
+        }
+        String normalized = priceUnit.trim().toUpperCase(Locale.ROOT);
+        if (!List.of("M2", "KG", "DB").contains(normalized)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported price unit");
+        }
+        return normalized;
     }
 
     private StoredImage storeImage(MultipartFile image, Path uploadDir, String publicFolder, Long ownerId) {

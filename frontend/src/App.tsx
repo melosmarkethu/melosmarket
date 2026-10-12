@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
 
+type PriceUnit = 'M2' | 'KG' | 'DB'
+
 type ProblemFormState = {
   title: string
   description: string
@@ -181,6 +183,7 @@ type SupplierPromotion = {
   description?: string
   currentPrice: string
   originalPrice?: string
+  priceUnit: PriceUnit
   imageUrl?: string
   startDate?: string
   expirationDate?: string
@@ -247,6 +250,7 @@ type SupplierPromotionFormState = {
   description: string
   currentPrice: string
   originalPrice: string
+  priceUnit: PriceUnit
   startDate: string
   expirationDate: string
   active: boolean
@@ -741,6 +745,8 @@ function App() {
   })
   const [workerSubmitState, setWorkerSubmitState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [workerSubmitMessage, setWorkerSubmitMessage] = useState('')
+  const [workerRegistrationProfileImage, setWorkerRegistrationProfileImage] = useState<File | null>(null)
+  const [workerRegistrationProfilePreview, setWorkerRegistrationProfilePreview] = useState('')
   const [reviewForm, setReviewForm] = useState<ReviewFormState>({
     rating: '5',
     text: '',
@@ -800,6 +806,10 @@ function App() {
   })
   const [supplierSubmitState, setSupplierSubmitState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [supplierSubmitMessage, setSupplierSubmitMessage] = useState('')
+  const [supplierRegistrationLogo, setSupplierRegistrationLogo] = useState<File | null>(null)
+  const [supplierRegistrationCover, setSupplierRegistrationCover] = useState<File | null>(null)
+  const [supplierRegistrationLogoPreview, setSupplierRegistrationLogoPreview] = useState('')
+  const [supplierRegistrationCoverPreview, setSupplierRegistrationCoverPreview] = useState('')
   const [supplierProfileForm, setSupplierProfileForm] = useState<SupplierProfileEditState>({
     businessName: '',
     email: '',
@@ -823,6 +833,7 @@ function App() {
     description: '',
     currentPrice: '',
     originalPrice: '',
+    priceUnit: 'M2',
     startDate: '',
     expirationDate: '',
     active: true,
@@ -906,6 +917,7 @@ function App() {
     county: supplier.county ? countyLabelsByApiValue[supplier.county] ?? supplier.county : '',
     promotions: (supplier.promotions ?? []).map((promotion) => ({
       ...promotion,
+      priceUnit: promotion.priceUnit ?? 'M2',
       imageUrl: resolveApiImageUrl(promotion.imageUrl),
       active: Boolean(promotion.active),
       current: Boolean(promotion.current),
@@ -930,6 +942,78 @@ function App() {
     deliveryInfo: form.deliveryInfo || undefined,
     additionalServices: form.additionalServices || undefined,
   })
+
+  const priceUnitLabel = (unit: PriceUnit) => {
+    if (unit === 'KG') return 'kg'
+    if (unit === 'DB') return 'db'
+    return 'm²'
+  }
+
+  const formatPromotionPrice = (price: string | undefined, unit: PriceUnit) => {
+    if (!price) return ''
+    const normalizedPrice = price.replace(/\s*Ft(?:\/(?:m²|m2|kg|db))?\s*$/i, '').trim()
+    return `${normalizedPrice} Ft/${priceUnitLabel(unit)}`
+  }
+
+  const validateImageFile = (file: File) => {
+    const supportedTypes = ['image/png', 'image/jpeg']
+    if (!supportedTypes.includes(file.type)) {
+      return 'Csak JPG vagy PNG képet lehet feltölteni.'
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return 'A kép mérete legfeljebb 5 MB lehet.'
+    }
+    return ''
+  }
+
+  const updateWorkerRegistrationProfileImage = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    if (!file) {
+      setWorkerRegistrationProfileImage(null)
+      setWorkerRegistrationProfilePreview('')
+      return
+    }
+    const error = validateImageFile(file)
+    if (error) {
+      setWorkerSubmitState('error')
+      setWorkerSubmitMessage(error)
+      event.target.value = ''
+      return
+    }
+    setWorkerRegistrationProfileImage(file)
+    setWorkerRegistrationProfilePreview(URL.createObjectURL(file))
+  }
+
+  const updateSupplierRegistrationImage = (
+    event: ChangeEvent<HTMLInputElement>,
+    imageType: 'logo' | 'cover',
+  ) => {
+    const file = event.target.files?.[0] ?? null
+    if (!file) {
+      if (imageType === 'logo') {
+        setSupplierRegistrationLogo(null)
+        setSupplierRegistrationLogoPreview('')
+      } else {
+        setSupplierRegistrationCover(null)
+        setSupplierRegistrationCoverPreview('')
+      }
+      return
+    }
+    const error = validateImageFile(file)
+    if (error) {
+      setSupplierSubmitState('error')
+      setSupplierSubmitMessage(error)
+      event.target.value = ''
+      return
+    }
+    if (imageType === 'logo') {
+      setSupplierRegistrationLogo(file)
+      setSupplierRegistrationLogoPreview(URL.createObjectURL(file))
+    } else {
+      setSupplierRegistrationCover(file)
+      setSupplierRegistrationCoverPreview(URL.createObjectURL(file))
+    }
+  }
 
   const fillSupplierProfileForm = (supplier: SupplierProfile) => {
     setSupplierProfileForm({
@@ -965,6 +1049,49 @@ function App() {
   const authHeaders = () => ({
     Authorization: `Bearer ${authToken}`,
   })
+
+  const tokenHeaders = (token: string) => ({
+    Authorization: `Bearer ${token}`,
+  })
+
+  const uploadWorkerProfileImageWithToken = async (file: File, token: string) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    const response = await fetch(`${apiBaseUrl}/workers/me/profile-image`, {
+      method: 'POST',
+      headers: tokenHeaders(token),
+      body: formData,
+    })
+    if (!response.ok) {
+      throw new Error(`Worker profile image upload failed with status ${response.status}`)
+    }
+    const updatedWorker = workerFromApi(await response.json())
+    setWorkerCards((current) =>
+      current.map((worker) => (worker.id === updatedWorker.id ? updatedWorker : worker)),
+    )
+    return updatedWorker
+  }
+
+  const uploadSupplierImageWithToken = async (
+    file: File,
+    imageType: 'profile' | 'cover',
+    token: string,
+  ) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    const response = await fetch(`${apiBaseUrl}/suppliers/me/images?imageType=${imageType}`, {
+      method: 'POST',
+      headers: tokenHeaders(token),
+      body: formData,
+    })
+    if (!response.ok) {
+      throw new Error(`Supplier image upload failed with status ${response.status}`)
+    }
+    const supplier = supplierFromApi(await response.json())
+    setMySupplier(supplier)
+    setSupplierCards((current) => [supplier, ...current.filter((item) => item.id !== supplier.id)])
+    return supplier
+  }
 
   const requireVerifiedEmail = () => {
     if (!currentUser || currentUser.emailVerified) {
@@ -1215,8 +1342,8 @@ function App() {
     setQuoteMessage('')
     if (updatePath) {
       window.history.pushState(null, '', supplierProfilePath(supplier))
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
 
     if (!supplier.id) {
       return
@@ -1305,8 +1432,8 @@ function App() {
     setReviewSubmitState('idle')
     if (updatePath) {
       window.history.pushState(null, '', workerProfilePath(worker))
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const closeWorkerProfile = () => {
@@ -1355,8 +1482,8 @@ function App() {
     showProblemProfile(problem)
     if (updatePath) {
       window.history.pushState(null, '', problemProfilePath(problem))
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
 
     if (!problem.id) {
       return
@@ -2299,6 +2426,14 @@ function App() {
 
       const auth = await response.json()
       rememberAuth(auth)
+      let imageUploadWarning = ''
+      if (workerRegistrationProfileImage) {
+        try {
+          await uploadWorkerProfileImageWithToken(workerRegistrationProfileImage, auth.token)
+        } catch {
+          imageUploadWarning = ' A profilkép feltöltése most nem sikerült, később a profilodban újra próbálhatod.'
+        }
+      }
       setWorkerForm({
         businessName: '',
         contactName: '',
@@ -2311,8 +2446,12 @@ function App() {
         serviceArea: '',
         description: '',
       })
+      setWorkerRegistrationProfileImage(null)
+      setWorkerRegistrationProfilePreview('')
       setWorkerSubmitState('success')
-      setWorkerSubmitMessage('A szakember regisztrációja sikeres. Be is jelentkeztél.')
+      setWorkerSubmitMessage(
+        `A szakember regisztrációja sikeres.${imageUploadWarning} Ne felejtsd el személyre szabni a profilodat! Bejelentkezés után feltölthetsz profilképet, referenciafotókat a munkáidról, és megadhatod saját Facebook-oldaladat is. Egy részletes, igényes profil segít abban, hogy több ügyfél találjon rád!`,
+      )
       loadWorkerRegistrationCount().catch(() => {
         setWorkerRegistrationCount(null)
       })
@@ -2381,7 +2520,23 @@ function App() {
 
       const auth = await response.json()
       rememberAuth(auth)
-      await loadMySupplier(auth.token)
+      let supplier = await loadMySupplier(auth.token)
+      let imageUploadWarning = ''
+      if (supplierRegistrationLogo) {
+        try {
+          supplier = await uploadSupplierImageWithToken(supplierRegistrationLogo, 'profile', auth.token)
+        } catch {
+          imageUploadWarning = ' A logó feltöltése most nem sikerült, később a profilodban újra próbálhatod.'
+        }
+      }
+      if (supplierRegistrationCover) {
+        try {
+          supplier = await uploadSupplierImageWithToken(supplierRegistrationCover, 'cover', auth.token)
+        } catch {
+          imageUploadWarning += ' A borítókép feltöltése most nem sikerült, később a profilodban újra próbálhatod.'
+        }
+      }
+      fillSupplierProfileForm(supplier)
       setSupplierForm({
         businessName: '',
         email: '',
@@ -2392,8 +2547,14 @@ function App() {
         address: '',
         description: '',
       })
+      setSupplierRegistrationLogo(null)
+      setSupplierRegistrationCover(null)
+      setSupplierRegistrationLogoPreview('')
+      setSupplierRegistrationCoverPreview('')
       setSupplierSubmitState('success')
-      setSupplierSubmitMessage('Sikeres Tüzép regisztráció. Már kezelheted is a profilodat.')
+      setSupplierSubmitMessage(
+        `Sikeres Tüzép regisztráció.${imageUploadWarning} Ne felejtsd el személyre szabni a Tüzép profilodat! Bejelentkezés után feltöltheted a logódat és borítóképedet, megadhatod a nyitvatartási idődet, saját weboldaladat, valamint aktuális akciókat is közzétehetsz. Egy jól kitöltött profil segít több vásárlót elérni!`,
+      )
       loadRegisteredUserCount().catch(() => {
         setRegisteredUserCount(null)
       })
@@ -2447,7 +2608,7 @@ function App() {
       setSupplierCards((current) => [supplier, ...current.filter((item) => item.id !== supplier.id)])
       fillSupplierProfileForm(supplier)
       setSupplierDashboardState('success')
-      setSupplierDashboardMessage('A Tüzép profil frissítve.')
+      setSupplierDashboardMessage('A Tüzép profil sikeresen frissítve.')
     } catch {
       setSupplierDashboardState('error')
       setSupplierDashboardMessage('Nem sikerült frissíteni a Tüzép profilt.')
@@ -2459,27 +2620,54 @@ function App() {
     if (!file || !authToken) {
       return
     }
+    const validationError = validateImageFile(file)
+    if (validationError) {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage(validationError)
+      event.target.value = ''
+      return
+    }
 
     try {
-      const formData = new FormData()
-      formData.append('image', file)
-      const response = await fetch(`${apiBaseUrl}/suppliers/me/images?imageType=${imageType}`, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: formData,
-      })
-      if (!response.ok) {
-        throw new Error(`Supplier image upload failed with status ${response.status}`)
-      }
-      const supplier = supplierFromApi(await response.json())
-      setMySupplier(supplier)
-      setSupplierCards((current) => [supplier, ...current.filter((item) => item.id !== supplier.id)])
+      await uploadSupplierImageWithToken(file, imageType, authToken)
       setSupplierDashboardState('success')
       setSupplierDashboardMessage(imageType === 'cover' ? 'A borítókép frissítve.' : 'A logó frissítve.')
       event.target.value = ''
     } catch {
       setSupplierDashboardState('error')
       setSupplierDashboardMessage('Nem sikerült feltölteni a képet.')
+    }
+  }
+
+  const deleteMySupplierProfile = async () => {
+    const confirmed = window.confirm(
+      'Biztosan véglegesen törlöd a Tüzép profilodat? A profil, az akciók és a feltöltött képek eltávolításra kerülnek, ezt később nem lehet visszavonni.',
+    )
+    if (!confirmed) {
+      return
+    }
+
+    setSupplierDashboardState('submitting')
+    setSupplierDashboardMessage('')
+    try {
+      const response = await fetch(`${apiBaseUrl}/suppliers/me`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+      if (!response.ok) {
+        throw new Error(`Supplier delete failed with status ${response.status}`)
+      }
+      const deletedSupplierId = mySupplier?.id
+      setMySupplier(null)
+      setSelectedSupplier(null)
+      setSupplierCards((current) => current.filter((supplier) => supplier.id !== deletedSupplierId))
+      setSupplierDashboardState('success')
+      setSupplierDashboardMessage('A Tüzép profil törölve.')
+      window.history.pushState(null, '', '/')
+      setIsSupplierDashboardPage(false)
+    } catch {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage('Nem sikerült törölni a Tüzép profilt.')
     }
   }
 
@@ -2505,6 +2693,7 @@ function App() {
             description: supplierPromotionForm.description || undefined,
             currentPrice: supplierPromotionForm.currentPrice,
             originalPrice: supplierPromotionForm.originalPrice || undefined,
+            priceUnit: supplierPromotionForm.priceUnit,
             startDate: supplierPromotionForm.startDate || undefined,
             expirationDate: supplierPromotionForm.expirationDate || undefined,
             active: supplierPromotionForm.active,
@@ -2521,6 +2710,7 @@ function App() {
         description: '',
         currentPrice: '',
         originalPrice: '',
+        priceUnit: 'M2',
         startDate: '',
         expirationDate: '',
         active: true,
@@ -2540,6 +2730,7 @@ function App() {
       description: promotion.description ?? '',
       currentPrice: promotion.currentPrice,
       originalPrice: promotion.originalPrice ?? '',
+      priceUnit: promotion.priceUnit,
       startDate: promotion.startDate ?? '',
       expirationDate: promotion.expirationDate ?? '',
       active: promotion.active,
@@ -2572,6 +2763,13 @@ function App() {
     if (!file || !promotion.id) {
       return
     }
+    const validationError = validateImageFile(file)
+    if (validationError) {
+      setSupplierDashboardState('error')
+      setSupplierDashboardMessage(validationError)
+      event.target.value = ''
+      return
+    }
     try {
       const formData = new FormData()
       formData.append('image', file)
@@ -2595,6 +2793,9 @@ function App() {
 
   const submitSupplierQuoteRequest = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (quoteState === 'submitting') {
+      return
+    }
     if (!selectedSupplier?.id) {
       return
     }
@@ -3013,7 +3214,7 @@ function App() {
                 <div className="mini-promo" key={promotion.id ?? promotion.title}>
                   {promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}
                   <span>{promotion.title}</span>
-                  <b>{promotion.currentPrice}</b>
+                  <b>{formatPromotionPrice(promotion.currentPrice, promotion.priceUnit)}</b>
                 </div>
               )) : (
                 <p className="empty-note">Jelenleg nincs feltöltött akció.</p>
@@ -3170,6 +3371,9 @@ function App() {
           <button className="button primary" type="submit" disabled={supplierDashboardState === 'submitting'}>
             {supplierDashboardState === 'submitting' ? 'Mentés...' : 'Profil mentése'}
           </button>
+          <button className="button danger" type="button" disabled={supplierDashboardState === 'submitting'} onClick={deleteMySupplierProfile}>
+            Tüzép profil törlése
+          </button>
           {supplierDashboardMessage && <p className={`form-message ${supplierDashboardState === 'success' ? 'success' : 'error'}`}>{supplierDashboardMessage}</p>}
           <div className="upload-actions">
             <label className="upload-box" htmlFor="supplier-logo-upload">
@@ -3190,15 +3394,37 @@ function App() {
             <div className="field"><label htmlFor="promo-title">Akció címe</label><input id="promo-title" required value={supplierPromotionForm.title} onChange={(event) => updateSupplierPromotionForm('title', event.target.value)} /></div>
             <div className="field"><label htmlFor="promo-description">Leírás</label><textarea id="promo-description" rows={3} value={supplierPromotionForm.description} onChange={(event) => updateSupplierPromotionForm('description', event.target.value)} /></div>
             <div className="form-row">
-              <div className="field"><label htmlFor="promo-price">Aktuális ár</label><input id="promo-price" required value={supplierPromotionForm.currentPrice} onChange={(event) => updateSupplierPromotionForm('currentPrice', event.target.value)} /></div>
-              <div className="field"><label htmlFor="promo-original-price">Eredeti ár</label><input id="promo-original-price" value={supplierPromotionForm.originalPrice} onChange={(event) => updateSupplierPromotionForm('originalPrice', event.target.value)} /></div>
+              <div className="field">
+                <label htmlFor="promo-price">Aktuális ár</label>
+                <div className="price-input-wrap">
+                  <input id="promo-price" required inputMode="numeric" placeholder="5990" value={supplierPromotionForm.currentPrice} onChange={(event) => updateSupplierPromotionForm('currentPrice', event.target.value)} />
+                  <span>Ft</span>
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="promo-original-price">Eredeti ár</label>
+                <div className="price-input-wrap">
+                  <input id="promo-original-price" inputMode="numeric" placeholder="6990" value={supplierPromotionForm.originalPrice} onChange={(event) => updateSupplierPromotionForm('originalPrice', event.target.value)} />
+                  <span>Ft</span>
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="promo-price-unit">Mértékegység</label>
+                <select id="promo-price-unit" value={supplierPromotionForm.priceUnit} onChange={(event) => updateSupplierPromotionForm('priceUnit', event.target.value as PriceUnit)}>
+                  <option value="M2">/m²</option>
+                  <option value="KG">/kg</option>
+                  <option value="DB">/db</option>
+                </select>
+              </div>
             </div>
             <div className="form-row">
               <div className="field"><label htmlFor="promo-start">Kezdés</label><input id="promo-start" type="date" value={supplierPromotionForm.startDate} onChange={(event) => updateSupplierPromotionForm('startDate', event.target.value)} /></div>
               <div className="field"><label htmlFor="promo-expiration">Lejárat</label><input id="promo-expiration" type="date" value={supplierPromotionForm.expirationDate} onChange={(event) => updateSupplierPromotionForm('expirationDate', event.target.value)} /></div>
             </div>
             <label className="checkbox-field" htmlFor="promo-active"><input id="promo-active" type="checkbox" checked={supplierPromotionForm.active} onChange={(event) => updateSupplierPromotionForm('active', event.target.checked)} /><span>Aktív akció</span></label>
-            <button className="button primary" type="submit">{supplierPromotionForm.id ? 'Akció mentése' : 'Akció létrehozása'}</button>
+            <button className="button primary" type="submit" disabled={supplierDashboardState === 'submitting'}>
+              {supplierDashboardState === 'submitting' ? 'Mentés...' : supplierPromotionForm.id ? 'Akció mentése' : 'Akció létrehozása'}
+            </button>
           </form>
 
           <div className="admin-list">
@@ -3206,14 +3432,14 @@ function App() {
               <div className="admin-row" key={promotion.id ?? promotion.title}>
                 <div className="admin-row-copy">
                   <strong>{promotion.title}</strong>
-                  <span>{promotion.currentPrice} · {promotion.current ? 'aktív' : 'nem látható aktuálisként'}</span>
+                  <span>{formatPromotionPrice(promotion.currentPrice, promotion.priceUnit)} · {promotion.current ? 'aktív' : 'nem látható aktuálisként'}</span>
                 </div>
                 <div className="admin-worker-controls">
                   <label className="button ghost">
                     Kép
                     <input className="visually-hidden-input" type="file" accept="image/png,image/jpeg" onChange={(event) => uploadSupplierPromotionImage(event, promotion)} />
                   </label>
-                  <button className="button secondary" type="button" onClick={() => editSupplierPromotion(promotion)}>Szerkesztés</button>
+                  <button className="button primary" type="button" onClick={() => editSupplierPromotion(promotion)}>Szerkesztés</button>
                   <button className="button danger" type="button" onClick={() => deleteSupplierPromotion(promotion)}>Törlés</button>
                 </div>
               </div>
@@ -3261,7 +3487,17 @@ function App() {
                 {selectedSupplier.deliveryAvailable && <span>🚚 Szállítás elérhető</span>}
               </div>
             </div>
-            <button className="button primary quote-button" type="button" onClick={() => setQuoteFormOpen(true)}>
+            <button
+              className={`button primary quote-button quote-button-${quoteState}`}
+              type="button"
+              onClick={() => {
+                setQuoteFormOpen(true)
+                if (quoteState !== 'success') {
+                  setQuoteMessage('')
+                  setQuoteState('idle')
+                }
+              }}
+            >
               Ajánlatkérés →
             </button>
           </div>
@@ -3307,8 +3543,8 @@ function App() {
                   <h3>{promotion.title}</h3>
                   {promotion.description && <p>{promotion.description}</p>}
                   <div className="price-row">
-                    <strong>{promotion.currentPrice}</strong>
-                    {promotion.originalPrice && <span>{promotion.originalPrice}</span>}
+                    <strong>{formatPromotionPrice(promotion.currentPrice, promotion.priceUnit)}</strong>
+                    {promotion.originalPrice && <span>{formatPromotionPrice(promotion.originalPrice, promotion.priceUnit)}</span>}
                   </div>
                   {promotion.expirationDate && <small>Érvényes: {promotion.expirationDate}</small>}
                 </div>
@@ -3346,8 +3582,8 @@ function App() {
                   <label htmlFor="quote-message">További információ</label>
                   <textarea id="quote-message" rows={4} value={quoteForm.message} onChange={(event) => setQuoteForm((current) => ({ ...current, message: event.target.value }))} />
                 </div>
-                <button className="button primary full-width" type="submit" disabled={quoteState === 'submitting'}>
-                  {quoteState === 'submitting' ? 'Küldés...' : 'Ajánlatkérés küldése'}
+                <button className={`button primary full-width quote-submit quote-submit-${quoteState}`} type="submit" disabled={quoteState === 'submitting'}>
+                  {quoteState === 'submitting' ? 'Küldés...' : quoteState === 'success' ? 'Elküldve' : 'Ajánlatkérés küldése'}
                 </button>
                 {quoteMessage && <p className={`form-message ${quoteState === 'success' ? 'success' : 'error'}`} role="status">{quoteMessage}</p>}
               </form>
@@ -4925,6 +5161,16 @@ function App() {
             <a className="button secondary" href="#problem">
               Probléma feltöltése
             </a>
+            <a
+              className="button secondary"
+              href="/tuzep"
+              onClick={(event) => {
+                event.preventDefault()
+                openSupplierSearchPage()
+              }}
+            >
+              Tüzép kereső
+            </a>
           </div>
         </div>
 
@@ -5303,27 +5549,6 @@ function App() {
         </div>
       </section>
 
-      <section className="section-block tuzep-section" id="tuzep">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">🔥 Tüzép kereső</p>
-            <h2>Építőanyag kereskedések és aktuális akciók egy helyen.</h2>
-          </div>
-          <a
-            className="button primary"
-            href="/tuzep"
-            onClick={(event) => {
-              event.preventDefault()
-              openSupplierSearchPage()
-            }}
-          >
-            Tüzép kereső megnyitása
-          </a>
-        </div>
-      </section>
-
-
-
       {!currentUser && (
         <section className="worker-signup supplier-signup" id="supplier-signup">
           <div>
@@ -5346,6 +5571,28 @@ function App() {
             </div>
             <div className="field"><label htmlFor="supplier-register-address">Cím</label><input id="supplier-register-address" value={supplierForm.address} onChange={(event) => updateSupplierForm('address', event.target.value)} /></div>
             <div className="field"><label htmlFor="supplier-register-description">Rövid bemutatkozás</label><textarea id="supplier-register-description" rows={4} value={supplierForm.description} onChange={(event) => updateSupplierForm('description', event.target.value)} /></div>
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="supplier-register-logo">Logó opcionális</label>
+                <input id="supplier-register-logo" type="file" accept="image/png,image/jpeg" onChange={(event) => updateSupplierRegistrationImage(event, 'logo')} />
+                <small>JPG vagy PNG, legfeljebb 5 MB.</small>
+                {supplierRegistrationLogoPreview && <img className="image-preview compact" src={supplierRegistrationLogoPreview} alt="Logó előnézet" />}
+              </div>
+              <div className="field">
+                <label htmlFor="supplier-register-cover">Borítókép opcionális</label>
+                <input id="supplier-register-cover" type="file" accept="image/png,image/jpeg" onChange={(event) => updateSupplierRegistrationImage(event, 'cover')} />
+                <small>JPG vagy PNG, legfeljebb 5 MB.</small>
+                {supplierRegistrationCoverPreview && <img className="image-preview compact" src={supplierRegistrationCoverPreview} alt="Borítókép előnézet" />}
+              </div>
+            </div>
+            <div className="completion-reminder">
+              <strong>Tüzép profil tipp</strong>
+              <p>
+                Ne felejtsd el személyre szabni a Tüzép profilodat! Bejelentkezés után feltöltheted a logódat és
+                borítóképedet, megadhatod a nyitvatartási idődet, saját weboldaladat, valamint aktuális akciókat is
+                közzétehetsz. Egy jól kitöltött profil segít több vásárlót elérni!
+              </p>
+            </div>
             <button className="button primary" type="submit" disabled={supplierSubmitState === 'submitting'}>{supplierSubmitState === 'submitting' ? 'Regisztráció...' : 'Csatlakozás Tüzépként'}</button>
             {supplierSubmitMessage && <p className={`form-message ${supplierSubmitState === 'success' ? 'success' : 'error'}`}>{supplierSubmitMessage}</p>}
           </form>
@@ -5606,6 +5853,29 @@ function App() {
               value={workerForm.description}
               onChange={(event) => updateWorkerForm('description', event.target.value)}
             />
+          </div>
+
+          <div className="field">
+            <label htmlFor="worker-register-profile-image">Profilkép opcionális</label>
+            <input
+              id="worker-register-profile-image"
+              type="file"
+              accept="image/png,image/jpeg"
+              onChange={updateWorkerRegistrationProfileImage}
+            />
+            <small>JPG vagy PNG, legfeljebb 5 MB.</small>
+            {workerRegistrationProfilePreview && (
+              <img className="image-preview" src={workerRegistrationProfilePreview} alt="Profilkép előnézet" />
+            )}
+          </div>
+
+          <div className="completion-reminder">
+            <strong>Profil tipp</strong>
+            <p>
+              Ne felejtsd el személyre szabni a profilodat! Bejelentkezés után feltölthetsz profilképet,
+              referenciafotókat a munkáidról, és megadhatod saját Facebook-oldaladat is. Egy részletes,
+              igényes profil segít abban, hogy több ügyfél találjon rád!
+            </p>
           </div>
 
           <button type="submit" className="button primary" disabled={workerSubmitState === 'submitting'}>
