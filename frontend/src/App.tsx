@@ -1820,6 +1820,9 @@ function App() {
 
       const supplier = supplierCards.find((item) => supplierProfileSlug(item) === pathSlug || `tuzep/${item.id}` === pathSlug)
       if (supplier) {
+        if (selectedSupplier && (supplierProfileSlug(selectedSupplier) === pathSlug || `tuzep/${selectedSupplier.id}` === pathSlug)) {
+          return
+        }
         setSelectedWorker(null)
         setSelectedProblem(null)
         openSupplierProfile(supplier, false).catch(() => undefined)
@@ -1829,7 +1832,7 @@ function App() {
     openProfileFromPath()
     window.addEventListener('popstate', openProfileFromPath)
     return () => window.removeEventListener('popstate', openProfileFromPath)
-  }, [workerCards, problemPosts, supplierCards])
+  }, [workerCards, problemPosts, supplierCards, selectedSupplier])
 
   useEffect(() => {
     let canonicalPath = window.location.pathname.replace(/\/+$/, '') || '/'
