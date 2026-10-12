@@ -4635,6 +4635,7 @@ function App() {
               Probléma feltöltése
             </a>
             <a
+              className="mobile-hidden-nav-link"
               href="/tuzep"
               onClick={(event) => {
                 event.preventDefault()
@@ -4961,6 +4962,16 @@ function App() {
         <div className="hero-copy">
           {!currentUser && (
             <div className="mobile-hero-auth" aria-label="Fiók műveletek">
+              <a
+                className="button secondary"
+                href="/tuzep"
+                onClick={(event) => {
+                  event.preventDefault()
+                  openSupplierSearchPage()
+                }}
+              >
+                Tüzép kereső
+              </a>
               <a className="button secondary" href="#problem">
                 Regisztráció ügyfélként
               </a>

@@ -2109,6 +2109,10 @@ textarea:focus {
     background: rgba(18, 122, 93, 0.08);
   }
 
+  .mobile-hidden-nav-link {
+    display: none !important;
+  }
+
   .header-actions {
     order: 2;
     width: 100%;
