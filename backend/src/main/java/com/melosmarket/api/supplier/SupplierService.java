@@ -314,40 +314,66 @@ public class SupplierService {
         helper.setTo(supplier.getEmail());
         helper.setFrom(fromEmail);
         helper.setReplyTo(request.getCustomerEmail());
-        helper.setSubject("New Quote Request - MelosMarket");
-        helper.setText(quoteRequestText(supplier, request), false);
+        helper.setSubject("Új ajánlatkérés érkezett - Melos Market");
+        helper.setText(quoteRequestHtml(supplier, request), true);
         mailSender.send(message);
     }
 
-    private String quoteRequestText(SupplierEntity supplier, SupplierQuoteRequestEntity request) {
+    private String quoteRequestHtml(SupplierEntity supplier, SupplierQuoteRequestEntity request) {
+        String profileUrl = publicBaseUrl.replaceAll("/+$", "") + "/tuzep/" + supplier.getId();
         return """
-                New quote request received from MelosMarket
-
-                Customer email:
-                %s
-
-                Phone:
-                %s
-
-                Requested materials:
-                %s
-
-                Additional information:
-                %s
-
-                Supplier:
-                %s
-
-                MelosMarket profile:
-                %s/tuzep/%s
+                <!doctype html>
+                <html lang="hu">
+                  <body style="margin:0;background:#f4f6f8;font-family:Arial,sans-serif;color:#111827;">
+                    <div style="max-width:660px;margin:0 auto;padding:32px 18px;">
+                      <div style="background:#ffffff;border-radius:18px;padding:32px;border:1px solid #e5e7eb;">
+                        <div style="font-size:14px;font-weight:700;color:#16a34a;margin-bottom:14px;">Melos Market</div>
+                        <h1 style="font-size:26px;line-height:1.2;margin:0 0 14px;">Új ajánlatkérés érkezett</h1>
+                        <p style="font-size:16px;line-height:1.6;margin:0 0 22px;color:#374151;">
+                          Egy érdeklődő ajánlatot kért a(z) <strong>%s</strong> Tüzép profilodon keresztül.
+                        </p>
+                        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:18px;margin:0 0 22px;">
+                          <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.04em;">Kapcsolat</p>
+                          <p style="margin:0 0 6px;font-size:15px;color:#111827;"><strong>Email:</strong> %s</p>
+                          <p style="margin:0;font-size:15px;color:#111827;"><strong>Telefon:</strong> %s</p>
+                        </div>
+                        <div style="margin:0 0 18px;">
+                          <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.04em;">Kért anyagok</p>
+                          <p style="white-space:pre-wrap;margin:0;font-size:16px;line-height:1.6;color:#374151;">%s</p>
+                        </div>
+                        <div style="margin:0 0 24px;">
+                          <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.04em;">További információ</p>
+                          <p style="white-space:pre-wrap;margin:0;font-size:16px;line-height:1.6;color:#374151;">%s</p>
+                        </div>
+                        <a href="%s" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;border-radius:999px;padding:14px 22px;font-weight:700;">
+                          Tüzép profil megnyitása
+                        </a>
+                        <p style="font-size:13px;line-height:1.5;color:#6b7280;margin:22px 0 0;">
+                          Válaszolhatsz közvetlenül erre az emailre, az érdeklődő email címe válaszcímként be van állítva.
+                        </p>
+                      </div>
+                    </div>
+                  </body>
+                </html>
                 """.formatted(
-                request.getCustomerEmail(),
-                request.getCustomerPhone() == null ? "-" : request.getCustomerPhone(),
-                request.getMaterials(),
-                request.getMessage() == null ? "-" : request.getMessage(),
-                supplier.getBusinessName(),
-                publicBaseUrl.replaceAll("/+$", ""),
-                supplier.getId());
+                escapeHtml(supplier.getBusinessName()),
+                escapeHtml(request.getCustomerEmail()),
+                escapeHtml(request.getCustomerPhone() == null ? "Nincs megadva" : request.getCustomerPhone()),
+                escapeHtml(request.getMaterials()),
+                escapeHtml(request.getMessage() == null ? "Nincs megadva" : request.getMessage()),
+                escapeHtml(profileUrl));
+    }
+
+    private String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
     private void deleteStoredFile(String storagePath) {
