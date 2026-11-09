@@ -37,7 +37,10 @@ public class AdminEmailController {
     public record EmailDraft(@NotBlank @Size(max = 180) String subject,
             @NotBlank @Size(max = 180) String heading,
             @NotBlank @Size(max = 10000) String message,
-            @NotBlank @Pattern(regexp = "ALL|WORKER|CUSTOMER|SUPPLIER") String audience) {}
+            @NotBlank @Pattern(regexp = "ALL|WORKER|CUSTOMER|SUPPLIER") String audience,
+            List<Long> recipientIds) {}
+
+    public record Recipient(Long id, String email, String role) {}
 
     private void requireAdmin() {
         if (auth.requireUser().role() != AccountRole.ADMIN) {
@@ -48,7 +51,7 @@ public class AdminEmailController {
     @PostMapping("/preview")
     public Map<String, Object> preview(@Valid @RequestBody EmailDraft draft) {
         requireAdmin();
-        return Map.of("html", html(draft), "recipients", recipients(draft).size());
+        return Map.of("html", html(draft), "recipients", recipients(draft));
     }
 
     @PostMapping("/test")
@@ -61,11 +64,17 @@ public class AdminEmailController {
     @PostMapping("/send")
     public Map<String, Integer> send(@Valid @RequestBody EmailDraft draft) {
         requireAdmin();
+        List<Recipient> eligible = recipients(draft);
+        if (draft.recipientIds() == null || draft.recipientIds().isEmpty()
+                || !eligible.stream().map(Recipient::id).toList().containsAll(draft.recipientIds())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Válassz érvényes címzetteket.");
+        }
         int sent = 0;
         int failed = 0;
-        for (String recipient : recipients(draft)) {
+        for (Recipient recipient : eligible) {
+            if (!draft.recipientIds().contains(recipient.id())) continue;
             try {
-                send(recipient, draft);
+                send(recipient.email(), draft);
                 sent++;
             } catch (ResponseStatusException exception) {
                 failed++;
@@ -74,12 +83,12 @@ public class AdminEmailController {
         return Map.of("sent", sent, "failed", failed);
     }
 
-    private List<String> recipients(EmailDraft draft) {
+    private List<Recipient> recipients(EmailDraft draft) {
         return users.findAll().stream()
                 .filter(user -> user.isEmailVerified())
                 .filter(user -> user.getRole() != AccountRole.ADMIN)
                 .filter(user -> draft.audience().equals("ALL") || user.getRole().name().equals(draft.audience()))
-                .map(user -> user.getEmail()).distinct().toList();
+                .map(user -> new Recipient(user.getId(), user.getEmail(), user.getRole().name())).toList();
     }
 
     private void send(String recipient, EmailDraft draft) {
