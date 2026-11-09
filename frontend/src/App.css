@@ -41,6 +41,22 @@
   position: relative;
 }
 
+.daily-view-counter {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+}
+
+.daily-view-counter span { display: grid; gap: 2px; }
+.daily-view-counter strong { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.daily-view-counter small { font-size: 0.65rem; white-space: nowrap; color: var(--text); }
+
 .header-menu {
   display: flex;
   flex: 1;
@@ -2045,8 +2061,15 @@ textarea:focus {
   }
 
   .brand-logo {
-    width: min(210px, 58vw);
+    width: min(210px, 38vw);
     padding: 5px 8px;
+  }
+
+  .daily-view-counter {
+    order: 0;
+    margin-left: auto;
+    gap: 5px;
+    padding: 6px;
   }
 
   .header-prize-note {
@@ -2061,7 +2084,7 @@ textarea:focus {
   .mobile-menu-toggle {
     order: 1;
     display: inline-flex;
-    margin-left: auto;
+    margin-left: 0;
   }
 
   .header-menu {

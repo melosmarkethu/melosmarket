@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
 import AdminEmailComposer from './AdminEmailComposer'
+import DailyViewCounter from './DailyViewCounter'
 
 type PriceUnit = 'M2' | 'KG' | 'DB'
 
@@ -4603,6 +4604,8 @@ function App() {
         <a className="brand" href="#top" aria-label="Melos Market főoldal">
           <img className="brand-logo" src="/melosmarket-logo.png" alt="Melos Market" />
         </a>
+
+        <DailyViewCounter apiBaseUrl={apiBaseUrl} />
 
         <button
           className="mobile-menu-toggle"
