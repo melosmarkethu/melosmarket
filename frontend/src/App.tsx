@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
+import AdminEmailComposer from './AdminEmailComposer'
 
 type PriceUnit = 'M2' | 'KG' | 'DB'
 
@@ -5640,6 +5641,7 @@ function App() {
 
       {isAdmin && (
         <section className="section-block admin-section" id="admin">
+          <AdminEmailComposer apiBaseUrl={apiBaseUrl} token={authToken} />
           <div className="section-heading">
             <div>
               <p className="section-kicker">Admin</p>
