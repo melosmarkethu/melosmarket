@@ -790,6 +790,7 @@ components:
         - TINSMITH
         - PLUMBING_GAS_HEATING
         - ELECTRICIAN
+        - CARPENTER
         - DRYWALL_INSTALLER
         - LOCKSMITH
         - WINDOW_INSTALLER
